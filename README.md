@@ -1,50 +1,120 @@
-# Welcome to your Expo app 👋
+# 🍔 Rassi Food Express
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+App de delivery de comida desenvolvido em React Native + Expo + TypeScript + NativeWind.
 
-## Get started
+---
 
-1. Install dependencies
+## 📱 Telas implementadas
 
-   ```bash
-   npm install
-   ```
+| Tela | Arquivo |
+|------|---------|
+| Login | `src/screens/LoginScreen.tsx` |
+| Cadastro | `src/screens/RegisterScreen.tsx` |
+| Endereço | `src/screens/AddressScreen.tsx` |
+| Home | `src/screens/HomeScreen.tsx` |
+| Lista de Restaurantes | `src/screens/RestaurantsScreen.tsx` |
+| Detalhe do Restaurante | `src/screens/RestaurantDetailScreen.tsx` |
+| Detalhe do Produto | `src/screens/ProductDetailScreen.tsx` |
+| Carrinho | `src/screens/CartScreen.tsx` |
+| Favoritos | `src/screens/FavoritesScreen.tsx` |
+| Pedidos | `src/screens/OrdersScreen.tsx` |
+| Perfil | `src/screens/ProfileScreen.tsx` |
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## 🚀 Como rodar
 
-In the output, you'll find options to open the app in a
+### Pré-requisitos
+- Node.js 18+
+- Expo CLI (`npm install -g expo-cli`)
+- App **Expo Go** no celular (iOS ou Android)
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### Instalação
 
 ```bash
-npm run reset-project
+cd RassiFoodExpress
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Escaneie o QR Code com o **Expo Go** no celular.
 
-## Learn more
+---
 
-To learn more about developing your project with Expo, look at the following resources:
+## 🗂️ Estrutura de pastas
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```
+RassiFoodExpress/
+├── App.tsx                        # Entrada do app
+├── src/
+│   ├── screens/                   # Todas as telas
+│   │   ├── LoginScreen.tsx
+│   │   ├── RegisterScreen.tsx
+│   │   ├── AddressScreen.tsx
+│   │   ├── HomeScreen.tsx
+│   │   ├── RestaurantsScreen.tsx
+│   │   ├── RestaurantDetailScreen.tsx
+│   │   ├── ProductDetailScreen.tsx
+│   │   ├── CartScreen.tsx
+│   │   ├── FavoritesScreen.tsx
+│   │   ├── OrdersScreen.tsx
+│   │   └── ProfileScreen.tsx
+│   ├── navigation/
+│   │   └── AppNavigator.tsx       # Stack + Tab Navigator
+│   ├── hooks/
+│   │   └── useCart.tsx            # Context + hook do carrinho
+│   └── data/
+│       └── mockData.ts            # Dados mock (restaurantes, produtos, categorias)
+├── package.json
+├── tsconfig.json
+└── babel.config.js
+```
 
-## Join the community
+---
 
-Join our community of developers creating universal apps.
+## ✨ Funcionalidades
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- **Autenticação**: Login, cadastro e endereço em etapas
+- **Home**: Categorias horizontais, busca e lista de destaques
+- **Animações**: Efeito de spring nos cards ao pressionar, hero image com parallax no detalhe do restaurante
+- **Carrinho**: Context global, adicionar/remover itens, contador no ícone
+- **Checkout**: Modal com seleção de método de pagamento (PIX, Crédito, Débito, Dinheiro)
+- **Rastreamento simulado**: Widget de acompanhamento com barra de progresso após confirmação
+- **Perfil**: Opções de endereço, dados e desconectar
+- **Navegação**: Bottom Tab (5 tabs) + Stack para telas de detalhe
+
+---
+
+## 🎨 Design System
+
+| Token | Valor |
+|-------|-------|
+| Primary | `#7EC8E3` |
+| Primary Dark | `#5BB5D5` |
+| Danger | `#FF6B6B` |
+| Text | `#222222` |
+| Subtle | `#888888` |
+| Background | `#FFFFFF` |
+| Card BG | `#FAFAFA` |
+| Input BG | `#F7FBFD` |
+
+---
+
+## 📦 Dependências principais
+
+- `expo` ~51
+- `react-navigation` v6 (native-stack + bottom-tabs)
+- `react-native-screens`
+- `react-native-safe-area-context`
+- TypeScript
+
+---
+
+## 🔧 Próximos passos sugeridos
+
+- [ ] Integrar com API real (Node.js / Supabase / Firebase)
+- [ ] Adicionar NativeWind para estilos Tailwind
+- [ ] Implementar push notifications de pedido
+- [ ] Adicionar mapa real com `react-native-maps`
+- [ ] Autenticação com AsyncStorage / SecureStore
+- [ ] Adicionar splash screen e ícone do app
