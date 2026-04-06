@@ -1,9 +1,10 @@
 import React, { useRef, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Image, Animated,
+  Image, Animated, StyleSheet,
 } from 'react-native';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../hooks/useCart';
 import { restaurants } from '../data/mockData';
 
@@ -21,15 +22,33 @@ function RestaurantRow({ item, onPress }: any) {
         onPressIn={pressIn}
         onPressOut={pressOut}
         onPress={onPress}
-        style={styles.cardInner}
+        className="flex-row items-center p-3"
       >
-        <Image source={{ uri: item.image }} style={styles.cardImage} />
-        <View style={styles.cardInfo}>
-          <Text style={styles.cardName}>{item.name}</Text>
-          <Text style={styles.cardAddress}>{item.address}</Text>
+        <Image source={{ uri: item.image }} className="w-20 h-20 rounded-xl bg-gray-100" />
+        <View className="flex-1 ml-3">
+          <Text className="text-base font-bold text-gray-800">{item.name}</Text>
+          <Text className="text-xs text-gray-400 mt-1">{item.address}</Text>
+          <View className="flex-row items-center gap-x-3 mt-2">
+            <View className="flex-row items-center gap-x-1">
+              <Ionicons name="star" size={12} color="#FBBF24" />
+              <Text className="text-xs font-semibold text-gray-600">{item.rating}</Text>
+            </View>
+            <View className="flex-row items-center gap-x-1">
+              <Ionicons name="bicycle-outline" size={12} color="#7EC8E3" />
+              <Text className="text-xs text-gray-500">R$ {item.deliveryFee.toFixed(2)}</Text>
+            </View>
+          </View>
         </View>
-        <TouchableOpacity onPress={() => setLiked(l => !l)} style={styles.heartBtn}>
-          <Text style={[styles.heart, liked && styles.heartFilled]}>{liked ? '♥' : '♡'}</Text>
+        <TouchableOpacity
+          onPress={() => setLiked(l => !l)}
+          className="p-2"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons
+            name={liked ? 'heart' : 'heart-outline'}
+            size={22}
+            color={liked ? '#FF6B6B' : '#ccc'}
+          />
         </TouchableOpacity>
       </TouchableOpacity>
     </Animated.View>
@@ -40,25 +59,31 @@ export default function RestaurantsScreen() {
   const { totalItems } = useCart();
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Restaurantes</Text>
-        <TouchableOpacity onPress={() => router.push('/cart')} style={styles.cartBtn}>
-          <Text style={styles.cartIcon}>🛒</Text>
+    <View className="flex-1 bg-white">
+      {/* Header */}
+      <View className="flex-row justify-between items-center px-5 pt-14 pb-4 border-b border-gray-100">
+        <Text className="text-2xl font-bold text-gray-800">Restaurantes</Text>
+        <TouchableOpacity onPress={() => router.push('/cart')} className="relative p-2">
+          <Ionicons name="cart-outline" size={26} color="#333" />
           {totalItems > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{totalItems}</Text>
+            <View className="absolute top-0 right-0 bg-red-400 rounded-full min-w-[18px] h-[18px] items-center justify-center px-1">
+              <Text className="text-white text-[10px] font-bold">{totalItems}</Text>
             </View>
           )}
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20, paddingTop: 8 }}>
         {restaurants.map((item) => (
           <RestaurantRow
             key={item.id}
             item={item}
-            onPress={() => router.push({ pathname: '/restaurant/[id]', params: { id: item.id, restaurant: JSON.stringify(item) } })}
+            onPress={() =>
+              router.push({
+                pathname: '/restaurant/[id]',
+                params: { id: item.id, restaurant: JSON.stringify(item) },
+              })
+            }
           />
         ))}
       </ScrollView>
@@ -67,32 +92,15 @@ export default function RestaurantsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16,
-  },
-  headerTitle: { fontSize: 22, fontWeight: '700', color: '#222' },
-  cartBtn: { position: 'relative', padding: 4 },
-  cartIcon: { fontSize: 24 },
-  badge: {
-    position: 'absolute', top: 0, right: 0,
-    backgroundColor: '#FF6B6B', borderRadius: 8,
-    minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center',
-  },
-  badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
   card: {
-    marginHorizontal: 20, marginBottom: 12, borderRadius: 12,
+    marginHorizontal: 20,
+    marginBottom: 12,
+    borderRadius: 16,
     backgroundColor: '#fff',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08, shadowRadius: 6, elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  cardInner: { flexDirection: 'row', alignItems: 'center', padding: 10 },
-  cardImage: { width: 72, height: 72, borderRadius: 10, backgroundColor: '#eee' },
-  cardInfo: { flex: 1, marginLeft: 12 },
-  cardName: { fontSize: 15, fontWeight: '700', color: '#222' },
-  cardAddress: { fontSize: 12, color: '#888', marginTop: 3 },
-  heartBtn: { padding: 6 },
-  heart: { fontSize: 22, color: '#ccc' },
-  heartFilled: { color: '#FF6B6B' },
 });

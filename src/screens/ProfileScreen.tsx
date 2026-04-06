@@ -1,60 +1,120 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-const options = [
-  { icon: '📍', title: 'Endereço', subtitle: 'Meu endereço de entrega' },
-  { icon: '📊', title: 'Meus dados', subtitle: 'Informações da minha conta' },
-  { icon: '🔒', title: 'Desconectar', subtitle: 'Desconectar usuário', danger: true },
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
+const options: {
+  icon: IoniconName;
+  title: string;
+  subtitle: string;
+  route?: string;
+  danger?: boolean;
+}[] = [
+  {
+    icon: 'person-circle-outline',
+    title: 'Meus dados',
+    subtitle: 'Editar nome, e-mail e telefone',
+    route: '/user/edit-profile',
+  },
+  {
+    icon: 'location-outline',
+    title: 'Endereço de entrega',
+    subtitle: 'Alterar meu endereço',
+    route: '/user/edit-address',
+  },
+  {
+    icon: 'notifications-outline',
+    title: 'Notificações',
+    subtitle: 'Preferências de alertas',
+  },
+  {
+    icon: 'log-out-outline',
+    title: 'Desconectar',
+    subtitle: 'Sair da conta',
+    danger: true,
+  },
 ];
 
 export default function ProfileScreen() {
+  const handlePress = (opt: typeof options[0]) => {
+    if (opt.danger) {
+      router.replace('/');
+    } else if (opt.route) {
+      router.push(opt.route as any);
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.logoTop}>RASSI FOOD</Text>
-          <Text style={styles.logoBottom}>EXPRESS</Text>
-        </View>
+    <View className="flex-1 bg-white">
+      {/* Header com logo */}
+      <View className="items-center pt-14 pb-5 border-b border-gray-100">
+        <Image
+          source={require('../../assets/images/logo02.png')}
+          style={{ width: 140, height: 60 }}
+          resizeMode="contain"
+        />
       </View>
 
-      <Text style={styles.title}>Meu Perfil</Text>
+      {/* Avatar placeholder */}
+      <View className="items-center mt-6 mb-6">
+        <View className="w-20 h-20 rounded-full bg-brand items-center justify-center mb-3" style={styles.avatarShadow}>
+          <Ionicons name="person" size={40} color="#fff" />
+        </View>
+        <Text className="text-xl font-bold text-gray-800">Meu Perfil</Text>
+        <Text className="text-sm text-gray-400 mt-0.5">usuario@email.com</Text>
+      </View>
 
-      <View style={styles.optionsList}>
-        {options.map(opt => (
+      {/* Opções */}
+      <View className="mx-5 rounded-2xl overflow-hidden bg-gray-50">
+        {options.map((opt, index) => (
           <TouchableOpacity
             key={opt.title}
-            style={styles.optionItem}
+            className={`flex-row items-center px-4 py-4 ${
+              index < options.length - 1 ? 'border-b border-gray-100' : ''
+            }`}
             activeOpacity={0.7}
-            onPress={() => {
-              if (opt.danger) router.replace('/');
-            }}
+            onPress={() => handlePress(opt)}
           >
-            <Text style={styles.optionIcon}>{opt.icon}</Text>
-            <View style={styles.optionText}>
-              <Text style={[styles.optionTitle, opt.danger && { color: '#FF6B6B' }]}>{opt.title}</Text>
-              <Text style={styles.optionSubtitle}>{opt.subtitle}</Text>
+            <View
+              className={`w-10 h-10 rounded-xl items-center justify-center mr-4 ${
+                opt.danger ? 'bg-red-100' : 'bg-sky-100'
+              }`}
+            >
+              <Ionicons
+                name={opt.icon}
+                size={22}
+                color={opt.danger ? '#FF6B6B' : '#7EC8E3'}
+              />
             </View>
+            <View className="flex-1">
+              <Text
+                className={`text-base font-bold ${opt.danger ? 'text-red-400' : 'text-gray-800'}`}
+              >
+                {opt.title}
+              </Text>
+              <Text className="text-xs text-gray-400 mt-0.5">{opt.subtitle}</Text>
+            </View>
+            {!opt.danger && (
+              <Ionicons name="chevron-forward" size={18} color="#ccc" />
+            )}
           </TouchableOpacity>
         ))}
       </View>
+
+      {/* Versão */}
+      <Text className="text-center text-xs text-gray-300 mt-8">Rassi Food Express v1.0.0</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 12, alignItems: 'center' },
-  logoTop: { fontSize: 22, fontWeight: '900', color: '#7EC8E3', letterSpacing: 3, textAlign: 'center' },
-  logoBottom: { fontSize: 13, fontWeight: '700', color: '#5BB5D5', letterSpacing: 6, textAlign: 'center' },
-  title: { fontSize: 22, fontWeight: '600', color: '#333', textAlign: 'center', marginTop: 24, marginBottom: 32 },
-  optionsList: { paddingHorizontal: 28 },
-  optionItem: {
-    flexDirection: 'row', alignItems: 'center', paddingVertical: 20,
-    borderBottomWidth: 1, borderBottomColor: '#f0f0f0',
+  avatarShadow: {
+    shadowColor: '#7EC8E3',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  optionIcon: { fontSize: 28, marginRight: 16 },
-  optionText: { flex: 1 },
-  optionTitle: { fontSize: 17, fontWeight: '700', color: '#222' },
-  optionSubtitle: { fontSize: 13, color: '#999', marginTop: 2 },
 });

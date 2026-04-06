@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'react-native';
 import { CartProvider } from '@/hooks/useCart';
+import '../style/global.css';
 
 export default function RootLayout() {
   return (
@@ -14,6 +15,8 @@ export default function RootLayout() {
         <Stack.Screen name="restaurant/[id]" />
         <Stack.Screen name="product/[id]" />
         <Stack.Screen name="cart" />
+        <Stack.Screen name="user/edit-profile" />
+        <Stack.Screen name="user/edit-address" />
       </Stack>
     </CartProvider>
   );

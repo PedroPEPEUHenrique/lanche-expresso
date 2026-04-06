@@ -1,115 +1,134 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, TouchableWithoutFeedback,
-  Dimensions,
+  View, Text, TextInput, TouchableOpacity, Image,
+  KeyboardAvoidingView, Platform, ScrollView,
+  TouchableWithoutFeedback, Dimensions, StyleSheet,
 } from 'react-native';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passFocused, setPassFocused] = useState(false);
 
   const handleTap = (x: number) => {
-    if (x > width / 2) {
-      // Lado direito → avançar (entrar)
-      router.replace('/(tabs)');
-    }
-    // Lado esquerdo → não faz nada (já é a primeira tela)
+    if (x > width / 2) router.replace('/(tabs)');
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      {/* Zonas de toque laterais */}
+    <KeyboardAvoidingView
+      className="flex-1 bg-white"
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <TouchableWithoutFeedback onPress={(e) => handleTap(e.nativeEvent.locationX)}>
-        <View style={styles.tapOverlay} pointerEvents="box-none" />
+        <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none" />
       </TouchableWithoutFeedback>
 
-      <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
-        <View style={styles.logoContainer}>
-          <Text style={styles.logoTop}>RASSI FOOD</Text>
-          <Text style={styles.logoBottom}>EXPRESS</Text>
-        </View>
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="flex-1 px-8 pt-20 pb-10">
+          {/* Logo */}
+          <View className="items-center mb-10">
+            <Image
+              source={require('../../assets/images/logo02.png')}
+              style={{ width: 200, height: 90 }}
+              resizeMode="contain"
+            />
+          </View>
 
-        <Text style={styles.title}>Acesse sua conta</Text>
+          <Text className="text-lg text-gray-500 text-center mb-8 font-medium">
+            Acesse sua conta
+          </Text>
 
-        <View style={styles.form}>
-          <Text style={styles.label}>E-mail</Text>
-          <TextInput
-            style={[styles.input, emailFocused && styles.inputFocused]}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            onFocus={() => setEmailFocused(true)}
-            onBlur={() => setEmailFocused(false)}
-            placeholderTextColor="#bbb"
-          />
+          {/* Campos */}
+          <View className="w-full gap-y-4">
+            <View>
+              <Text className="text-sm font-semibold text-gray-600 mb-1.5">E-mail</Text>
+              <View
+                className={`flex-row items-center h-12 border-[1.5px] rounded-xl px-3 bg-sky-50 ${
+                  emailFocused ? 'border-brand' : 'border-gray-200'
+                }`}
+              >
+                <Ionicons name="mail-outline" size={18} color={emailFocused ? '#7EC8E3' : '#aaa'} />
+                <TextInput
+                  className="flex-1 ml-2 text-gray-800 text-base"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  onFocus={() => setEmailFocused(true)}
+                  onBlur={() => setEmailFocused(false)}
+                  placeholder="seu@email.com"
+                  placeholderTextColor="#bbb"
+                />
+              </View>
+            </View>
 
-          <Text style={[styles.label, { marginTop: 16 }]}>Senha</Text>
-          <TextInput
-            style={[styles.input, passFocused && styles.inputFocused]}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            onFocus={() => setPassFocused(true)}
-            onBlur={() => setPassFocused(false)}
-            placeholderTextColor="#bbb"
-          />
-        </View>
+            <View>
+              <Text className="text-sm font-semibold text-gray-600 mb-1.5">Senha</Text>
+              <View
+                className={`flex-row items-center h-12 border-[1.5px] rounded-xl px-3 bg-sky-50 ${
+                  passFocused ? 'border-brand' : 'border-gray-200'
+                }`}
+              >
+                <Ionicons name="lock-closed-outline" size={18} color={passFocused ? '#7EC8E3' : '#aaa'} />
+                <TextInput
+                  className="flex-1 ml-2 text-gray-800 text-base"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPass}
+                  onFocus={() => setPassFocused(true)}
+                  onBlur={() => setPassFocused(false)}
+                  placeholder="••••••••"
+                  placeholderTextColor="#bbb"
+                />
+                <TouchableOpacity onPress={() => setShowPass(s => !s)}>
+                  <Ionicons
+                    name={showPass ? 'eye-outline' : 'eye-off-outline'}
+                    size={18}
+                    color="#aaa"
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
 
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={0.85}
-          onPress={() => router.replace('/(tabs)')}
-        >
-          <Text style={styles.buttonText}>Acessar</Text>
-        </TouchableOpacity>
+          {/* Botão Acessar */}
+          <TouchableOpacity
+            className="mt-10 bg-brand rounded-2xl h-14 items-center justify-center shadow-sm"
+            activeOpacity={0.85}
+            onPress={() => router.replace('/(tabs)')}
+          >
+            <Text className="text-white text-base font-bold tracking-wide">Acessar</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.push('/register')} activeOpacity={0.7}>
-          <Text style={styles.linkText}>Criar minha conta</Text>
-        </TouchableOpacity>
+          {/* Link para cadastro */}
+          <TouchableOpacity
+            onPress={() => router.push('/register')}
+            activeOpacity={0.7}
+            className="mt-5 items-center"
+          >
+            <Text className="text-gray-500 text-base">
+              Não tem conta?{' '}
+              <Text className="text-brand-dark font-bold">Criar minha conta</Text>
+            </Text>
+          </TouchableOpacity>
 
-        <View style={styles.hintRow}>
-          <Text style={styles.hintText}>← voltar</Text>
-          <Text style={styles.hintText}>avançar →</Text>
+          {/* Dica de navegação */}
+          <View className="flex-row justify-between mt-auto pt-8 opacity-30">
+            <Text className="text-xs text-gray-400">← voltar</Text>
+            <Text className="text-xs text-gray-400">avançar →</Text>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  tapOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 0,
-  },
-  inner: { flexGrow: 1, paddingHorizontal: 32, paddingTop: 80, paddingBottom: 40, zIndex: 1 },
-  logoContainer: { alignItems: 'center', marginBottom: 48 },
-  logoTop: { fontSize: 28, fontWeight: '900', color: '#7EC8E3', letterSpacing: 3 },
-  logoBottom: { fontSize: 16, fontWeight: '700', color: '#5BB5D5', letterSpacing: 6, marginTop: -4 },
-  title: { fontSize: 18, fontWeight: '500', color: '#333', textAlign: 'center', marginBottom: 32 },
-  form: { width: '100%' },
-  label: { fontSize: 14, color: '#333', marginBottom: 6 },
-  input: {
-    width: '100%', height: 48, borderWidth: 1.5, borderColor: '#ccc',
-    borderRadius: 8, paddingHorizontal: 14, backgroundColor: '#f7fbfd', fontSize: 15,
-  },
-  inputFocused: { borderColor: '#7EC8E3' },
-  button: {
-    marginTop: 48, backgroundColor: '#7EC8E3', borderRadius: 10,
-    height: 50, alignItems: 'center', justifyContent: 'center',
-  },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  linkText: { textAlign: 'center', marginTop: 20, color: '#555', fontSize: 15 },
-  hintRow: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    marginTop: 32, opacity: 0.3,
-  },
-  hintText: { fontSize: 12, color: '#999' },
-});

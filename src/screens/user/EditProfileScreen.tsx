@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Image,
-  KeyboardAvoidingView, Platform, ScrollView,
-  TouchableWithoutFeedback, Dimensions, StyleSheet,
+  ScrollView, KeyboardAvoidingView, Platform, StyleSheet,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
-const { width } = Dimensions.get('window');
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -16,25 +13,34 @@ const fields: {
   field: string;
   keyboard: 'default' | 'email-address' | 'phone-pad';
   icon: IoniconName;
-  secure?: boolean;
   autoCapitalize?: 'none' | 'words';
+  secure?: boolean;
 }[] = [
   { label: 'Nome completo', field: 'name', keyboard: 'default', icon: 'person-outline', autoCapitalize: 'words' },
   { label: 'E-mail', field: 'email', keyboard: 'email-address', icon: 'mail-outline', autoCapitalize: 'none' },
   { label: 'WhatsApp', field: 'whatsapp', keyboard: 'phone-pad', icon: 'logo-whatsapp', autoCapitalize: 'none' },
-  { label: 'Senha', field: 'password', keyboard: 'default', icon: 'lock-closed-outline', secure: true, autoCapitalize: 'none' },
+  { label: 'Nova Senha', field: 'password', keyboard: 'default', icon: 'lock-closed-outline', secure: true, autoCapitalize: 'none' },
 ];
 
-export default function RegisterScreen() {
-  const [form, setForm] = useState({ name: '', email: '', whatsapp: '', password: '' });
+export default function EditProfileScreen() {
+  const [form, setForm] = useState({
+    name: 'Pedro Henrique',
+    email: 'usuario@email.com',
+    whatsapp: '(00) 00000-0000',
+    password: '',
+  });
   const [focused, setFocused] = useState<string | null>(null);
   const [showPass, setShowPass] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const set = (field: string) => (val: string) => setForm(f => ({ ...f, [field]: val }));
 
-  const handleTap = (x: number) => {
-    if (x > width / 2) router.push('/address');
-    else router.back();
+  const handleSave = () => {
+    setSaved(true);
+    setTimeout(() => {
+      setSaved(false);
+      router.back();
+    }, 800);
   };
 
   return (
@@ -42,32 +48,42 @@ export default function RegisterScreen() {
       className="flex-1 bg-white"
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <TouchableWithoutFeedback onPress={(e) => handleTap(e.nativeEvent.locationX)}>
-        <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none" />
-      </TouchableWithoutFeedback>
+      {/* Header */}
+      <View className="flex-row items-center px-5 pt-14 pb-4 border-b border-gray-100">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="w-10 h-10 rounded-xl bg-gray-100 items-center justify-center mr-4"
+        >
+          <Ionicons name="arrow-back" size={20} color="#333" />
+        </TouchableOpacity>
+        <Text className="text-xl font-bold text-gray-800 flex-1">Meus Dados</Text>
+        <Image
+          source={require('../../../assets/images/logo02.png')}
+          style={{ width: 80, height: 34 }}
+          resizeMode="contain"
+        />
+      </View>
 
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View className="flex-1 px-8 pt-14 pb-10">
-          {/* Logo */}
+        <View className="px-5 pt-6 pb-10">
+          {/* Avatar */}
           <View className="items-center mb-6">
-            <Image
-              source={require('../../assets/images/logo02.png')}
-              style={{ width: 160, height: 72 }}
-              resizeMode="contain"
-            />
+            <View className="w-20 h-20 rounded-full bg-brand items-center justify-center mb-3" style={styles.avatarShadow}>
+              <Ionicons name="person" size={38} color="#fff" />
+            </View>
+            <TouchableOpacity className="flex-row items-center gap-x-1.5">
+              <Ionicons name="camera-outline" size={14} color="#7EC8E3" />
+              <Text className="text-sm text-brand font-semibold">Alterar foto</Text>
+            </TouchableOpacity>
           </View>
 
-          <Text className="text-lg text-gray-500 text-center mb-6 font-medium">
-            Criar sua conta
-          </Text>
-
           {/* Campos */}
-          <View className="w-full gap-y-3">
-            {fields.map(({ label, field, keyboard, icon, secure, autoCapitalize }) => (
+          <View className="gap-y-4">
+            {fields.map(({ label, field, keyboard, icon, autoCapitalize, secure }) => (
               <View key={field}>
                 <Text className="text-sm font-semibold text-gray-600 mb-1.5">{label}</Text>
                 <View
@@ -90,6 +106,7 @@ export default function RegisterScreen() {
                     onFocus={() => setFocused(field)}
                     onBlur={() => setFocused(null)}
                     placeholderTextColor="#bbb"
+                    placeholder={secure ? '••••••••' : undefined}
                   />
                   {secure && (
                     <TouchableOpacity onPress={() => setShowPass(s => !s)}>
@@ -105,22 +122,43 @@ export default function RegisterScreen() {
             ))}
           </View>
 
-          {/* Botão */}
+          {/* Botão salvar */}
           <TouchableOpacity
-            className="mt-8 bg-brand rounded-2xl h-14 items-center justify-center shadow-sm"
+            className={`mt-8 rounded-2xl h-14 items-center justify-center flex-row gap-x-2 ${
+              saved ? 'bg-green-400' : 'bg-brand'
+            }`}
             activeOpacity={0.85}
-            onPress={() => router.push('/address')}
+            onPress={handleSave}
           >
-            <Text className="text-white text-base font-bold tracking-wide">Próximo Passo</Text>
+            <Ionicons
+              name={saved ? 'checkmark-circle-outline' : 'save-outline'}
+              size={20}
+              color="#fff"
+            />
+            <Text className="text-white text-base font-bold">
+              {saved ? 'Salvo!' : 'Salvar Alterações'}
+            </Text>
           </TouchableOpacity>
 
-          {/* Dica de navegação */}
-          <View className="flex-row justify-between mt-auto pt-8 opacity-30">
-            <Text className="text-xs text-gray-400">← voltar</Text>
-            <Text className="text-xs text-gray-400">avançar →</Text>
-          </View>
+          {/* Cancelar */}
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="mt-3 items-center py-2"
+          >
+            <Text className="text-gray-400 text-base">Cancelar</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  avatarShadow: {
+    shadowColor: '#7EC8E3',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+});

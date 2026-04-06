@@ -1,60 +1,75 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Image,
-  KeyboardAvoidingView, Platform, ScrollView,
-  TouchableWithoutFeedback, Dimensions, StyleSheet,
+  ScrollView, KeyboardAvoidingView, Platform, StyleSheet,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-const { width } = Dimensions.get('window');
-
-export default function AddressScreen() {
+export default function EditAddressScreen() {
   const [focused, setFocused] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
   const [form, setForm] = useState({
-    endereco: '', numero: '', complemento: '',
-    bairro: '', cidade: '', uf: '', cep: '',
+    endereco: 'Rua das Flores',
+    numero: '123',
+    complemento: 'Apto 45',
+    bairro: 'Centro',
+    cidade: 'São Paulo',
+    uf: 'SP',
+    cep: '01310-100',
   });
 
   const set = (field: string) => (val: string) => setForm(f => ({ ...f, [field]: val }));
-
-  const handleTap = (x: number) => {
-    if (x > width / 2) router.replace('/(tabs)');
-    else router.back();
-  };
 
   const inputClass = (field: string) =>
     `flex-row items-center h-12 border-[1.5px] rounded-xl px-3 bg-sky-50 ${
       focused === field ? 'border-brand' : 'border-gray-200'
     }`;
 
+  const handleSave = () => {
+    setSaved(true);
+    setTimeout(() => {
+      setSaved(false);
+      router.back();
+    }, 800);
+  };
+
   return (
     <KeyboardAvoidingView
       className="flex-1 bg-white"
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <TouchableWithoutFeedback onPress={(e) => handleTap(e.nativeEvent.locationX)}>
-        <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none" />
-      </TouchableWithoutFeedback>
+      {/* Header */}
+      <View className="flex-row items-center px-5 pt-14 pb-4 border-b border-gray-100">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="w-10 h-10 rounded-xl bg-gray-100 items-center justify-center mr-4"
+        >
+          <Ionicons name="arrow-back" size={20} color="#333" />
+        </TouchableOpacity>
+        <Text className="text-xl font-bold text-gray-800 flex-1">Endereço de Entrega</Text>
+        <Image
+          source={require('../../../assets/images/logo02.png')}
+          style={{ width: 80, height: 34 }}
+          resizeMode="contain"
+        />
+      </View>
 
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View className="flex-1 px-7 pt-12 pb-10">
-          {/* Logo */}
-          <View className="items-center mb-5">
-            <Image
-              source={require('../../assets/images/logo02.png')}
-              style={{ width: 160, height: 72 }}
-              resizeMode="contain"
-            />
+        <View className="px-5 pt-6 pb-10">
+          {/* Ícone decorativo */}
+          <View className="items-center mb-6">
+            <View className="w-16 h-16 rounded-full bg-sky-100 items-center justify-center">
+              <Ionicons name="location" size={32} color="#7EC8E3" />
+            </View>
+            <Text className="text-sm text-gray-400 mt-2 text-center">
+              Seu endereço de entrega cadastrado
+            </Text>
           </View>
-
-          <Text className="text-lg text-gray-500 text-center mb-5 font-medium">
-            Informe seu endereço
-          </Text>
 
           <View className="gap-y-3">
             {/* Endereço + Número */}
@@ -174,20 +189,31 @@ export default function AddressScreen() {
             </View>
           </View>
 
-          {/* Botão */}
+          {/* Botão salvar */}
           <TouchableOpacity
-            className="mt-8 bg-brand rounded-2xl h-14 items-center justify-center shadow-sm"
+            className={`mt-8 rounded-2xl h-14 items-center justify-center flex-row gap-x-2 ${
+              saved ? 'bg-green-400' : 'bg-brand'
+            }`}
             activeOpacity={0.85}
-            onPress={() => router.replace('/(tabs)')}
+            onPress={handleSave}
           >
-            <Text className="text-white text-base font-bold tracking-wide">Concluir Cadastro</Text>
+            <Ionicons
+              name={saved ? 'checkmark-circle-outline' : 'save-outline'}
+              size={20}
+              color="#fff"
+            />
+            <Text className="text-white text-base font-bold">
+              {saved ? 'Salvo!' : 'Salvar Endereço'}
+            </Text>
           </TouchableOpacity>
 
-          {/* Dica de navegação */}
-          <View className="flex-row justify-between mt-auto pt-6 opacity-30">
-            <Text className="text-xs text-gray-400">← voltar</Text>
-            <Text className="text-xs text-gray-400">avançar →</Text>
-          </View>
+          {/* Cancelar */}
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="mt-3 items-center py-2"
+          >
+            <Text className="text-gray-400 text-base">Cancelar</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

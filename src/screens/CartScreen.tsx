@@ -1,82 +1,138 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, Image, Modal,
+  Image, Modal, StyleSheet,
 } from 'react-native';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../hooks/useCart';
 
-function CheckoutModal({ visible, onClose, total }: any) {
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
+const paymentMethods: { id: string; label: string; icon: IoniconName }[] = [
+  { id: 'pix', label: 'PIX', icon: 'flash-outline' },
+  { id: 'credit', label: 'Crédito', icon: 'card-outline' },
+  { id: 'debit', label: 'Débito', icon: 'wallet-outline' },
+  { id: 'cash', label: 'Dinheiro', icon: 'cash-outline' },
+];
+
+function CheckoutModal({ visible, onClose, total }: { visible: boolean; onClose: () => void; total: number }) {
   const [method, setMethod] = useState<string | null>(null);
   const [step, setStep] = useState<'payment' | 'tracking'>('payment');
-
-  const methods = [
-    { id: 'pix', label: 'PIX', emoji: '⚡' },
-    { id: 'credit', label: 'Crédito', emoji: '💳' },
-    { id: 'debit', label: 'Débito', emoji: '🏦' },
-    { id: 'cash', label: 'Dinheiro', emoji: '💵' },
-  ];
 
   if (!visible) return null;
 
   return (
     <Modal transparent animationType="slide" visible={visible}>
-      <View style={modalStyles.overlay}>
-        <View style={modalStyles.sheet}>
+      <View className="flex-1 justify-end" style={styles.overlay}>
+        <View className="bg-white rounded-t-3xl px-7 pt-6 pb-10">
           {step === 'payment' ? (
             <>
-              <Text style={modalStyles.title}>Finalizar Pedido</Text>
-              <Text style={modalStyles.subtitle}>Forma de Pagamento</Text>
-              <View style={modalStyles.methodGrid}>
-                {methods.map(m => (
+              {/* Handle */}
+              <View className="self-center w-10 h-1 rounded-full bg-gray-200 mb-5" />
+
+              <Text className="text-2xl font-extrabold text-gray-800 text-center mb-5">
+                Finalizar Pedido
+              </Text>
+
+              <Text className="text-sm font-semibold text-gray-500 mb-4">
+                Forma de Pagamento
+              </Text>
+
+              <View className="flex-row flex-wrap gap-3 mb-6">
+                {paymentMethods.map(m => (
                   <TouchableOpacity
                     key={m.id}
-                    style={[modalStyles.methodBtn, method === m.id && modalStyles.methodSelected]}
+                    className={`flex-1 min-w-[40%] py-4 rounded-2xl border-2 items-center ${
+                      method === m.id
+                        ? 'border-brand bg-brand'
+                        : 'border-gray-200 bg-white'
+                    }`}
                     onPress={() => setMethod(m.id)}
                     activeOpacity={0.8}
                   >
-                    <Text style={modalStyles.methodEmoji}>{m.emoji}</Text>
-                    <Text style={[modalStyles.methodLabel, method === m.id && { color: '#fff' }]}>{m.label}</Text>
+                    <Ionicons
+                      name={m.icon}
+                      size={24}
+                      color={method === m.id ? '#fff' : '#555'}
+                    />
+                    <Text
+                      className={`text-sm font-semibold mt-1 ${
+                        method === m.id ? 'text-white' : 'text-gray-600'
+                      }`}
+                    >
+                      {m.label}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
-              <View style={modalStyles.totalRow}>
-                <Text style={modalStyles.totalLabel}>Total</Text>
-                <Text style={modalStyles.totalValue}>R$ {total.toFixed(2)}</Text>
+
+              <View className="flex-row justify-between items-center mb-6">
+                <Text className="text-lg font-bold text-gray-800">Total</Text>
+                <Text className="text-xl font-extrabold text-brand-dark">
+                  R$ {total.toFixed(2)}
+                </Text>
               </View>
+
               <TouchableOpacity
-                style={[modalStyles.confirmBtn, !method && { opacity: 0.5 }]}
+                className={`bg-brand rounded-2xl h-14 items-center justify-center mb-3 ${!method ? 'opacity-50' : ''}`}
                 disabled={!method}
                 onPress={() => setStep('tracking')}
                 activeOpacity={0.85}
               >
-                <Text style={modalStyles.confirmBtnText}>Confirmar Pedido</Text>
+                <Text className="text-white text-base font-bold">Confirmar Pedido</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={onClose} style={modalStyles.cancelBtn}>
-                <Text style={modalStyles.cancelText}>Cancelar</Text>
+
+              <TouchableOpacity onPress={onClose} className="items-center py-2">
+                <Text className="text-gray-400 text-base">Cancelar</Text>
               </TouchableOpacity>
             </>
           ) : (
             <>
-              <Text style={modalStyles.title}>🎉 Pedido Confirmado!</Text>
-              <View style={modalStyles.trackingBox}>
-                <Text style={modalStyles.trackingTitle}>🛵 Entregador a caminho!</Text>
-                <Text style={modalStyles.trackingDesc}>Seu pedido está sendo preparado e logo sairá para entrega.</Text>
-                <View style={modalStyles.etaRow}>
-                  <Text style={modalStyles.etaEmoji}>⏱</Text>
-                  <Text style={modalStyles.etaText}>Tempo estimado: 30–45 min</Text>
+              <View className="self-center w-10 h-1 rounded-full bg-gray-200 mb-5" />
+
+              <Text className="text-2xl font-extrabold text-gray-800 text-center mb-5">
+                🎉 Pedido Confirmado!
+              </Text>
+
+              <View className="bg-brand-light rounded-2xl p-5 mb-6">
+                <View className="flex-row items-center mb-3">
+                  <Ionicons name="bicycle" size={22} color="#5BB5D5" />
+                  <Text className="text-base font-bold text-gray-700 ml-2">
+                    Entregador a caminho!
+                  </Text>
                 </View>
-                <View style={modalStyles.progressBar}>
-                  <View style={[modalStyles.progressFill, { width: '40%' }]} />
+                <Text className="text-sm text-gray-500 leading-5 mb-4">
+                  Seu pedido está sendo preparado e logo sairá para entrega.
+                </Text>
+
+                <View className="flex-row items-center mb-4">
+                  <Ionicons name="time-outline" size={16} color="#7EC8E3" />
+                  <Text className="text-sm text-gray-600 ml-1.5">Tempo estimado: 30–45 min</Text>
                 </View>
-                <View style={modalStyles.stepsRow}>
+
+                <View className="h-2 bg-gray-200 rounded-full mb-3">
+                  <View className="h-2 bg-brand rounded-full" style={{ width: '40%' }} />
+                </View>
+
+                <View className="flex-row justify-between">
                   {['Preparando', 'Saiu', 'Chegando'].map((s, i) => (
-                    <Text key={s} style={[modalStyles.stepLabel, i === 0 && { color: '#7EC8E3', fontWeight: '700' }]}>{s}</Text>
+                    <Text
+                      key={s}
+                      className={`text-xs font-semibold ${i === 0 ? 'text-brand' : 'text-gray-300'}`}
+                    >
+                      {s}
+                    </Text>
                   ))}
                 </View>
               </View>
-              <TouchableOpacity style={modalStyles.confirmBtn} onPress={onClose} activeOpacity={0.85}>
-                <Text style={modalStyles.confirmBtnText}>Fechar</Text>
+
+              <TouchableOpacity
+                className="bg-brand rounded-2xl h-14 items-center justify-center"
+                onPress={onClose}
+                activeOpacity={0.85}
+              >
+                <Text className="text-white text-base font-bold">Fechar</Text>
               </TouchableOpacity>
             </>
           )}
@@ -97,60 +153,105 @@ export default function CartScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backText}>←</Text>
+    <View className="flex-1 bg-white">
+      {/* Header */}
+      <View className="flex-row justify-between items-center px-5 pt-14 pb-4 border-b border-gray-100">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="w-10 h-10 rounded-xl bg-gray-100 items-center justify-center"
+        >
+          <Ionicons name="arrow-back" size={20} color="#333" />
         </TouchableOpacity>
-        <View>
-          <Text style={styles.logoTop}>RASSI FOOD</Text>
-          <Text style={styles.logoBottom}>EXPRESS</Text>
-        </View>
-        <View style={{ width: 40 }} />
+
+        <Image
+          source={require('../../assets/images/logo02.png')}
+          style={{ width: 110, height: 46 }}
+          resizeMode="contain"
+        />
+
+        <View className="w-10" />
       </View>
 
       {items.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyEmoji}>🛒</Text>
-          <Text style={styles.emptyText}>Seu carrinho está vazio</Text>
+        <View className="flex-1 items-center justify-center px-8">
+          <View className="bg-gray-100 rounded-full p-6 mb-4">
+            <Ionicons name="cart-outline" size={56} color="#ccc" />
+          </View>
+          <Text className="text-xl font-bold text-gray-700 mb-2">Carrinho vazio</Text>
+          <Text className="text-sm text-gray-400 text-center">
+            Adicione itens de um restaurante para começar seu pedido.
+          </Text>
         </View>
       ) : (
         <>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20 }}>
             {items.map(item => (
-              <View key={item.product.id} style={styles.cartItem}>
-                <Image source={{ uri: item.product.image }} style={styles.itemImage} />
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemName}>{item.product.name}</Text>
-                  <Text style={styles.itemDesc}>{item.product.description}</Text>
-                  {item.quantity > 1 && <Text style={styles.itemQty}>x{item.quantity}</Text>}
+              <View
+                key={item.product.id}
+                className="flex-row items-center mb-3 p-3 rounded-2xl bg-gray-50"
+                style={styles.itemShadow}
+              >
+                <Image
+                  source={{ uri: item.product.image }}
+                  className="w-[70px] h-[70px] rounded-xl bg-gray-200"
+                />
+                <View className="flex-1 ml-3">
+                  <Text className="text-sm font-bold text-gray-800">{item.product.name}</Text>
+                  <Text className="text-xs text-gray-400 mt-1" numberOfLines={2}>
+                    {item.product.description}
+                  </Text>
+                  {item.quantity > 1 && (
+                    <Text className="text-xs text-brand font-bold mt-1">x{item.quantity}</Text>
+                  )}
                 </View>
-                <TouchableOpacity onPress={() => removeItem(item.product.id)} style={styles.deleteBtn}>
-                  <Text style={styles.deleteIcon}>🗑️</Text>
-                </TouchableOpacity>
+                <View className="items-end ml-2 gap-y-2">
+                  <Text className="text-sm font-bold text-brand-dark">
+                    R$ {(item.product.price * item.quantity).toFixed(2)}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => removeItem(item.product.id)}
+                    className="w-7 h-7 rounded-lg bg-red-100 items-center justify-center"
+                  >
+                    <Ionicons name="trash-outline" size={14} color="#FF6B6B" />
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
 
-            <View style={styles.summaryBox}>
-              <Text style={styles.summaryTitle}>Resumo dos valores</Text>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Subtotal</Text>
-                <Text style={styles.summaryValue}>R$ {subtotal.toFixed(2)}</Text>
+            {/* Resumo */}
+            <View className="mt-4 p-4 bg-gray-50 rounded-2xl">
+              <Text className="text-base font-bold text-gray-800 mb-4">Resumo do pedido</Text>
+
+              <View className="flex-row justify-between mb-2">
+                <Text className="text-sm text-gray-500">Subtotal</Text>
+                <Text className="text-sm text-gray-700">R$ {subtotal.toFixed(2)}</Text>
               </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Taxa de entrega</Text>
-                <Text style={styles.summaryValue}>R$ {deliveryFee.toFixed(2)}</Text>
+
+              <View className="flex-row justify-between mb-2">
+                <View className="flex-row items-center gap-x-1">
+                  <Ionicons name="bicycle-outline" size={14} color="#7EC8E3" />
+                  <Text className="text-sm text-gray-500">Taxa de entrega</Text>
+                </View>
+                <Text className="text-sm text-gray-700">R$ {deliveryFee.toFixed(2)}</Text>
               </View>
-              <View style={[styles.summaryRow, styles.totalRow]}>
-                <Text style={styles.totalLabel}>TOTAL</Text>
-                <Text style={styles.totalValue}>R$ {total.toFixed(2)}</Text>
+
+              <View className="h-[1px] bg-gray-200 my-3" />
+
+              <View className="flex-row justify-between">
+                <Text className="text-base font-extrabold text-gray-800">TOTAL</Text>
+                <Text className="text-base font-extrabold text-brand-dark">R$ {total.toFixed(2)}</Text>
               </View>
             </View>
           </ScrollView>
 
-          <View style={styles.footer}>
-            <TouchableOpacity style={styles.finalizeBtn} onPress={() => setShowModal(true)} activeOpacity={0.85}>
-              <Text style={styles.finalizeBtnText}>Finalizar Pedido</Text>
+          <View className="px-5 pb-8 pt-3 border-t border-gray-100">
+            <TouchableOpacity
+              className="bg-brand rounded-2xl h-14 items-center justify-center flex-row gap-x-2"
+              onPress={() => setShowModal(true)}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+              <Text className="text-white text-base font-bold">Finalizar Pedido</Text>
             </TouchableOpacity>
           </View>
         </>
@@ -162,68 +263,14 @@ export default function CartScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16,
+  overlay: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
-  backText: { fontSize: 24, color: '#333' },
-  logoTop: { fontSize: 18, fontWeight: '900', color: '#7EC8E3', letterSpacing: 2, textAlign: 'center' },
-  logoBottom: { fontSize: 11, fontWeight: '700', color: '#5BB5D5', letterSpacing: 5, textAlign: 'center' },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyEmoji: { fontSize: 64, marginBottom: 16 },
-  emptyText: { fontSize: 18, color: '#aaa' },
-  cartItem: {
-    flexDirection: 'row', alignItems: 'center', marginBottom: 14,
-    padding: 10, borderRadius: 12, backgroundColor: '#fafafa',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+  itemShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  itemImage: { width: 70, height: 70, borderRadius: 10, backgroundColor: '#eee' },
-  itemInfo: { flex: 1, marginLeft: 12 },
-  itemName: { fontSize: 14, fontWeight: '700', color: '#222' },
-  itemDesc: { fontSize: 12, color: '#888', marginTop: 2 },
-  itemQty: { fontSize: 12, color: '#7EC8E3', fontWeight: '700', marginTop: 4 },
-  deleteBtn: { padding: 6 },
-  deleteIcon: { fontSize: 20 },
-  summaryBox: { marginTop: 20, padding: 16, backgroundColor: '#f8f8f8', borderRadius: 16 },
-  summaryTitle: { fontSize: 16, fontWeight: '700', color: '#222', marginBottom: 12 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  summaryLabel: { fontSize: 14, color: '#666' },
-  summaryValue: { fontSize: 14, color: '#333' },
-  totalRow: { marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#eee' },
-  totalLabel: { fontSize: 16, fontWeight: '800', color: '#222' },
-  totalValue: { fontSize: 16, fontWeight: '800', color: '#222' },
-  footer: { padding: 20, paddingBottom: 32 },
-  finalizeBtn: { backgroundColor: '#7EC8E3', borderRadius: 12, height: 52, alignItems: 'center', justifyContent: 'center' },
-  finalizeBtnText: { color: '#fff', fontSize: 17, fontWeight: '700' },
-});
-
-const modalStyles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 28, paddingBottom: 44 },
-  title: { fontSize: 22, fontWeight: '800', color: '#222', marginBottom: 20, textAlign: 'center' },
-  subtitle: { fontSize: 15, fontWeight: '600', color: '#555', marginBottom: 14 },
-  methodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
-  methodBtn: { flex: 1, minWidth: '40%', padding: 14, borderRadius: 12, borderWidth: 2, borderColor: '#e0e0e0', alignItems: 'center' },
-  methodSelected: { borderColor: '#7EC8E3', backgroundColor: '#7EC8E3' },
-  methodEmoji: { fontSize: 24, marginBottom: 4 },
-  methodLabel: { fontSize: 14, fontWeight: '600', color: '#444' },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
-  totalLabel: { fontSize: 18, fontWeight: '700', color: '#222' },
-  totalValue: { fontSize: 18, fontWeight: '800', color: '#5BB5D5' },
-  confirmBtn: { backgroundColor: '#7EC8E3', borderRadius: 12, height: 52, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  confirmBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  cancelBtn: { alignItems: 'center' },
-  cancelText: { color: '#aaa', fontSize: 15 },
-  trackingBox: { backgroundColor: '#f2fbff', borderRadius: 16, padding: 20, marginBottom: 24 },
-  trackingTitle: { fontSize: 18, fontWeight: '800', color: '#333', marginBottom: 8 },
-  trackingDesc: { fontSize: 13, color: '#777', lineHeight: 20, marginBottom: 16 },
-  etaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
-  etaEmoji: { fontSize: 16, marginRight: 6 },
-  etaText: { fontSize: 14, color: '#555' },
-  progressBar: { height: 8, backgroundColor: '#ddd', borderRadius: 4, marginBottom: 8 },
-  progressFill: { height: 8, backgroundColor: '#7EC8E3', borderRadius: 4 },
-  stepsRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  stepLabel: { fontSize: 12, color: '#bbb' },
 });
