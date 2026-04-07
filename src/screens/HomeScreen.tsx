@@ -6,11 +6,11 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../hooks/useCart';
+import { useFavorites } from '../hooks/useFavorites';
 import { restaurants, categories } from '../data/mockData';
 
-function RestaurantCard({ item, onPress }: any) {
+function RestaurantCard({ item, onPress, liked, onToggleFavorite }: any) {
   const scale = useRef(new Animated.Value(1)).current;
-  const [liked, setLiked] = useState(false);
 
   const onPressIn = () => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true }).start();
   const onPressOut = () => Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start();
@@ -44,7 +44,7 @@ function RestaurantCard({ item, onPress }: any) {
           </View>
         </View>
         <TouchableOpacity
-          onPress={() => setLiked(l => !l)}
+          onPress={() => onToggleFavorite(item)}
           className="p-2"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
@@ -61,6 +61,7 @@ function RestaurantCard({ item, onPress }: any) {
 
 export default function HomeScreen() {
   const { totalItems } = useCart();
+  const { isFavorite, toggleFavorite } = useFavorites();
   const [search, setSearch] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
 
@@ -142,6 +143,8 @@ export default function HomeScreen() {
           <RestaurantCard
             key={item.id}
             item={item}
+            liked={isFavorite(item.id)}
+            onToggleFavorite={toggleFavorite}
             onPress={() =>
               router.push({
                 pathname: '/restaurant/[id]',

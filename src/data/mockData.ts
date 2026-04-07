@@ -19,9 +19,9 @@ export interface Restaurant {
 
 export const categories = [
   { id: '1', name: 'BURGUER', emoji: '🍔' },
-  { id: '2', name: 'PIZZA', emoji: '🍕' },
-  { id: '3', name: 'FRITAS', emoji: '🍟' },
-  { id: '4', name: 'DOCES', emoji: '🍬' },
+  { id: '2', name: 'PIZZA', emoji: ' 🍕 ' },
+  { id: '3', name: 'FRITAS', emoji: ' 🍟 ' },
+  { id: '4', name: 'DOCES', emoji: ' 🍬 ' },
   { id: '5', name: 'SORVETE', emoji: '🍦' },
 ];
 
