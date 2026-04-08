@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   Image, Animated, StyleSheet,
@@ -6,11 +6,11 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../hooks/useCart';
+import { useFavorites } from '../hooks/useFavorites';
 import { restaurants } from '../data/mockData';
 
-function RestaurantRow({ item, onPress }: any) {
+function RestaurantRow({ item, onPress, liked, onToggleFavorite }: any) {
   const scale = useRef(new Animated.Value(1)).current;
-  const [liked, setLiked] = useState(false);
 
   const pressIn = () => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true }).start();
   const pressOut = () => Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start();
@@ -40,7 +40,7 @@ function RestaurantRow({ item, onPress }: any) {
           </View>
         </View>
         <TouchableOpacity
-          onPress={() => setLiked(l => !l)}
+          onPress={() => onToggleFavorite(item)}
           className="p-2"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
@@ -57,6 +57,7 @@ function RestaurantRow({ item, onPress }: any) {
 
 export default function RestaurantsScreen() {
   const { totalItems } = useCart();
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   return (
     <View className="flex-1 bg-white">
@@ -78,6 +79,8 @@ export default function RestaurantsScreen() {
           <RestaurantRow
             key={item.id}
             item={item}
+            liked={isFavorite(item.id)}
+            onToggleFavorite={toggleFavorite}
             onPress={() =>
               router.push({
                 pathname: '/restaurant/[id]',

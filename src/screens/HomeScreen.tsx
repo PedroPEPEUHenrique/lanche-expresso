@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import {
   View, Text, TextInput, ScrollView, TouchableOpacity,
-  Image, Animated, StyleSheet,
+  Image, Animated, StyleSheet, RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -64,6 +64,13 @@ export default function HomeScreen() {
   const { isFavorite, toggleFavorite } = useFavorites();
   const [search, setSearch] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    router.push('/(tabs)/restaurants');
+    setRefreshing(false);
+  };
 
   const filtered = restaurants.filter(r =>
     r.name.toLowerCase().includes(search.toLowerCase())
@@ -91,7 +98,17 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#7EC8E3']}
+            tintColor="#7EC8E3"
+          />
+        }
+      >
         {/* Busca */}
         <View className="px-5 mb-5">
           <View

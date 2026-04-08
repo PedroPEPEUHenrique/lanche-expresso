@@ -1,20 +1,30 @@
-import { useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Restaurant } from '../data/mockData';
 
 const STORAGE_KEY = 'favorites';
 
-export function useFavorites() {
+interface FavoritesContextData {
+  favorites: Restaurant[];
+  toggleFavorite: (restaurant: Restaurant) => void;
+  isFavorite: (id: string) => boolean;
+}
+
+const FavoritesContext = createContext<FavoritesContextData>({} as FavoritesContextData);
+
+export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const [favorites, setFavorites] = useState<Restaurant[]>([]);
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then(json => {
-      if (json) setFavorites(JSON.parse(json));
-    });
+    AsyncStorage.getItem(STORAGE_KEY)
+      .then(json => {
+        if (json) setFavorites(JSON.parse(json));
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(favorites)).catch(() => {});
   }, [favorites]);
 
   function toggleFavorite(restaurant: Restaurant) {
@@ -28,5 +38,13 @@ export function useFavorites() {
     return favorites.some(r => r.id === id);
   }
 
-  return { favorites, toggleFavorite, isFavorite };
+  return (
+    <FavoritesContext.Provider value={{ favorites, toggleFavorite, isFavorite }}>
+      {children}
+    </FavoritesContext.Provider>
+  );
+}
+
+export function useFavorites() {
+  return useContext(FavoritesContext);
 }

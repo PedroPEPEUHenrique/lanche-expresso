@@ -6,6 +6,7 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../hooks/useCart';
+import { useOrders } from '../hooks/useOrders';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -16,11 +17,33 @@ const paymentMethods: { id: string; label: string; icon: IoniconName }[] = [
   { id: 'cash', label: 'Dinheiro', icon: 'cash-outline' },
 ];
 
-function CheckoutModal({ visible, onClose, total }: { visible: boolean; onClose: () => void; total: number }) {
+function CheckoutModal({
+  visible,
+  onClose,
+  onConfirm,
+  total,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onConfirm: (paymentMethod: string) => void;
+  total: number;
+}) {
   const [method, setMethod] = useState<string | null>(null);
   const [step, setStep] = useState<'payment' | 'tracking'>('payment');
 
   if (!visible) return null;
+
+  const handleConfirm = () => {
+    if (!method) return;
+    onConfirm(method);
+    setStep('tracking');
+  };
+
+  const handleClose = () => {
+    setStep('payment');
+    setMethod(null);
+    onClose();
+  };
 
   return (
     <Modal transparent animationType="slide" visible={visible}>
@@ -28,7 +51,6 @@ function CheckoutModal({ visible, onClose, total }: { visible: boolean; onClose:
         <View className="bg-white rounded-t-3xl px-7 pt-6 pb-10">
           {step === 'payment' ? (
             <>
-              {/* Handle */}
               <View className="self-center w-10 h-1 rounded-full bg-gray-200 mb-5" />
 
               <Text className="text-2xl font-extrabold text-gray-800 text-center mb-5">
@@ -77,13 +99,13 @@ function CheckoutModal({ visible, onClose, total }: { visible: boolean; onClose:
               <TouchableOpacity
                 className={`bg-brand rounded-2xl h-14 items-center justify-center mb-3 ${!method ? 'opacity-50' : ''}`}
                 disabled={!method}
-                onPress={() => setStep('tracking')}
+                onPress={handleConfirm}
                 activeOpacity={0.85}
               >
                 <Text className="text-white text-base font-bold">Confirmar Pedido</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={onClose} className="items-center py-2">
+              <TouchableOpacity onPress={handleClose} className="items-center py-2">
                 <Text className="text-gray-400 text-base">Cancelar</Text>
               </TouchableOpacity>
             </>
@@ -129,7 +151,7 @@ function CheckoutModal({ visible, onClose, total }: { visible: boolean; onClose:
 
               <TouchableOpacity
                 className="bg-brand rounded-2xl h-14 items-center justify-center"
-                onPress={onClose}
+                onPress={handleClose}
                 activeOpacity={0.85}
               >
                 <Text className="text-white text-base font-bold">Fechar</Text>
@@ -144,7 +166,27 @@ function CheckoutModal({ visible, onClose, total }: { visible: boolean; onClose:
 
 export default function CartScreen() {
   const { items, removeItem, total, subtotal, deliveryFee, clearCart } = useCart();
+  const { addOrder } = useOrders();
   const [showModal, setShowModal] = useState(false);
+
+  const handleConfirm = (paymentMethod: string) => {
+    if (items.length === 0) return;
+    const restaurant = items[0].restaurant;
+    addOrder({
+      restaurantName: restaurant.name,
+      restaurantImage: restaurant.image,
+      items: items.map(i => ({
+        name: i.product.name,
+        quantity: i.quantity,
+        price: i.product.price,
+        image: i.product.image,
+      })),
+      subtotal,
+      deliveryFee,
+      total,
+      paymentMethod,
+    });
+  };
 
   const handleClose = () => {
     setShowModal(false);
@@ -257,7 +299,12 @@ export default function CartScreen() {
         </>
       )}
 
-      <CheckoutModal visible={showModal} onClose={handleClose} total={total} />
+      <CheckoutModal
+        visible={showModal}
+        onClose={handleClose}
+        onConfirm={handleConfirm}
+        total={total}
+      />
     </View>
   );
 }

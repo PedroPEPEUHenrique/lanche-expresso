@@ -1,10 +1,14 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'react-native';
 import { CartProvider } from '@/hooks/useCart';
+import { FavoritesProvider } from '@/hooks/useFavorites';
+import { OrdersProvider } from '@/hooks/useOrders';
 import '../style/global.css';
 
 export default function RootLayout() {
   return (
+    <OrdersProvider>
+    <FavoritesProvider>
     <CartProvider>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <Stack screenOptions={{ headerShown: false }}>
@@ -19,5 +23,7 @@ export default function RootLayout() {
         <Stack.Screen name="user/edit-address" />
       </Stack>
     </CartProvider>
+    </FavoritesProvider>
+    </OrdersProvider>
   );
 }
