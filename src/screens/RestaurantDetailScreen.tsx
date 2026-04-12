@@ -191,10 +191,5 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   productCard: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
 });

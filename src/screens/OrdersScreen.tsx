@@ -35,7 +35,7 @@ function OrderCard({ order }: { order: Order }) {
   return (
     <View
       className="mx-5 mb-4 rounded-2xl bg-white overflow-hidden"
-      style={{ elevation: 3, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8 }}
+      style={{  }}
     >
       {/* Restaurant header */}
       <View className="flex-row items-center p-4 border-b border-gray-100">

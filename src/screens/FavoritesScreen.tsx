@@ -29,7 +29,7 @@ export default function FavoritesScreen() {
           <TouchableOpacity
             key={item.id}
             className="flex-row items-center p-3 mx-5 mb-3 bg-white rounded-2xl"
-            style={{ elevation: 3, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8 }}
+            style={{  }}
             onPress={() => router.push({ pathname: '/restaurant/[id]', params: { id: item.id, restaurant: JSON.stringify(item) } })}
           >
             <Image source={{ uri: item.image }} className="w-20 h-20 rounded-xl bg-gray-100" />
