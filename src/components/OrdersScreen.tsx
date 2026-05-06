@@ -1,10 +1,14 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { memo } from 'react';
+import { View, Text, FlatList, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useOrders, Order } from '../hooks/useOrders';
+import { useOrders } from '../store/ordersStore';
+import { formatDate } from '../utils/format';
+import { Order } from '../types';
 
-const paymentIcons: Record<string, React.ComponentProps<typeof Ionicons>['name']> = {
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
+const paymentIcons: Record<string, IoniconName> = {
   pix: 'flash-outline',
   credit: 'card-outline',
   debit: 'wallet-outline',
@@ -18,31 +22,13 @@ const paymentLabels: Record<string, string> = {
   cash: 'Dinheiro',
 };
 
-function formatDate(iso: string) {
-  const date = new Date(iso);
-  return date.toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
-function OrderCard({ order }: { order: Order }) {
+const OrderCard = memo(({ order }: { order: Order }) => {
   const totalItems = order.items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
-    <View
-      className="mx-5 mb-4 rounded-2xl bg-white overflow-hidden"
-      style={{  }}
-    >
-      {/* Restaurant header */}
+    <View className="mx-5 mb-4 rounded-2xl bg-white overflow-hidden">
       <View className="flex-row items-center p-4 border-b border-gray-100">
-        <Image
-          source={{ uri: order.restaurantImage }}
-          className="w-12 h-12 rounded-xl bg-gray-100"
-        />
+        <Image source={{ uri: order.restaurantImage }} className="w-12 h-12 rounded-xl bg-gray-100" />
         <View className="flex-1 ml-3">
           <Text className="text-base font-bold text-gray-800">{order.restaurantName}</Text>
           <Text className="text-xs text-gray-400 mt-0.5">{formatDate(order.date)}</Text>
@@ -52,7 +38,6 @@ function OrderCard({ order }: { order: Order }) {
         </View>
       </View>
 
-      {/* Items */}
       <View className="px-4 pt-3 pb-2">
         {order.items.map((item, index) => (
           <View key={index} className="flex-row justify-between items-center mb-1.5">
@@ -66,29 +51,18 @@ function OrderCard({ order }: { order: Order }) {
         ))}
       </View>
 
-      {/* Footer */}
       <View className="flex-row items-center justify-between px-4 pb-4 pt-2 border-t border-gray-100">
         <View className="flex-row items-center gap-x-1.5">
-          <Ionicons
-            name={paymentIcons[order.paymentMethod] ?? 'card-outline'}
-            size={14}
-            color="#aaa"
-          />
-          <Text className="text-xs text-gray-400">
-            {paymentLabels[order.paymentMethod] ?? order.paymentMethod}
-          </Text>
+          <Ionicons name={paymentIcons[order.paymentMethod] ?? 'card-outline'} size={14} color="#aaa" />
+          <Text className="text-xs text-gray-400">{paymentLabels[order.paymentMethod] ?? order.paymentMethod}</Text>
           <Text className="text-xs text-gray-300 mx-1">·</Text>
-          <Text className="text-xs text-gray-400">
-            {totalItems} {totalItems === 1 ? 'item' : 'itens'}
-          </Text>
+          <Text className="text-xs text-gray-400">{totalItems} {totalItems === 1 ? 'item' : 'itens'}</Text>
         </View>
-        <Text className="text-sm font-extrabold text-brand-dark">
-          R$ {order.total.toFixed(2)}
-        </Text>
+        <Text className="text-sm font-extrabold text-brand-dark">R$ {order.total.toFixed(2)}</Text>
       </View>
     </View>
   );
-}
+});
 
 export default function OrdersScreen() {
   const { orders } = useOrders();
@@ -117,11 +91,13 @@ export default function OrdersScreen() {
   return (
     <View className="flex-1 bg-white">
       <Text className="text-2xl font-extrabold text-gray-800 mx-5 pt-14 pb-4">Meus Pedidos</Text>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
-        {orders.map(order => (
-          <OrderCard key={order.id} order={order} />
-        ))}
-      </ScrollView>
+      <FlatList
+        data={orders}
+        keyExtractor={(order) => order.id}
+        renderItem={({ item }) => <OrderCard order={item} />}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 24 }}
+      />
     </View>
   );
 }

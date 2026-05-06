@@ -1,1 +1,1 @@
-export { default } from '@/screens/RegisterScreen';
+export { default } from '@/components/RegisterScreen';

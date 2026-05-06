@@ -1,17 +1,24 @@
-import React, { useRef } from 'react';
+import React, { useCallback, useRef, memo } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
-  Image, Animated, StyleSheet,
+  View, Text, TouchableOpacity,
+  Image, Animated, StyleSheet, FlatList,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useCart } from '../hooks/useCart';
-import { useFavorites } from '../hooks/useFavorites';
+import { useCart } from '../store/cartStore';
+import { useFavorites } from '../store/favoritesStore';
 import { restaurants } from '../data/mockData';
+import { Restaurant } from '../types';
 
-function RestaurantRow({ item, onPress, liked, onToggleFavorite }: any) {
+type RowProps = {
+  item: Restaurant;
+  liked: boolean;
+  onPress: () => void;
+  onToggleFavorite: (item: Restaurant) => void;
+};
+
+const RestaurantRow = memo(({ item, liked, onPress, onToggleFavorite }: RowProps) => {
   const scale = useRef(new Animated.Value(1)).current;
-
   const pressIn = () => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true }).start();
   const pressOut = () => Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start();
 
@@ -44,24 +51,37 @@ function RestaurantRow({ item, onPress, liked, onToggleFavorite }: any) {
           className="p-2"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons
-            name={liked ? 'heart' : 'heart-outline'}
-            size={22}
-            color={liked ? '#FF6B6B' : '#ccc'}
-          />
+          <Ionicons name={liked ? 'heart' : 'heart-outline'} size={22} color={liked ? '#FF6B6B' : '#ccc'} />
         </TouchableOpacity>
       </TouchableOpacity>
     </Animated.View>
   );
-}
+});
 
 export default function RestaurantsScreen() {
   const { totalItems } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
 
+  const handlePress = useCallback(
+    (item: Restaurant) =>
+      router.push({ pathname: '/restaurant/[id]', params: { id: item.id, restaurant: JSON.stringify(item) } }),
+    []
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: Restaurant }) => (
+      <RestaurantRow
+        item={item}
+        liked={isFavorite(item.id)}
+        onToggleFavorite={toggleFavorite}
+        onPress={() => handlePress(item)}
+      />
+    ),
+    [isFavorite, toggleFavorite, handlePress]
+  );
+
   return (
     <View className="flex-1 bg-white">
-      {/* Header */}
       <View className="flex-row justify-between items-center px-5 pt-14 pb-4 border-b border-gray-100">
         <Text className="text-2xl font-bold text-gray-800">Restaurantes</Text>
         <TouchableOpacity onPress={() => router.push('/cart')} className="relative p-2">
@@ -74,22 +94,13 @@ export default function RestaurantsScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20, paddingTop: 8 }}>
-        {restaurants.map((item) => (
-          <RestaurantRow
-            key={item.id}
-            item={item}
-            liked={isFavorite(item.id)}
-            onToggleFavorite={toggleFavorite}
-            onPress={() =>
-              router.push({
-                pathname: '/restaurant/[id]',
-                params: { id: item.id, restaurant: JSON.stringify(item) },
-              })
-            }
-          />
-        ))}
-      </ScrollView>
+      <FlatList
+        data={restaurants}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 20, paddingTop: 8 }}
+      />
     </View>
   );
 }

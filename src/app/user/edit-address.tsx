@@ -1,3 +1,1 @@
-import EditAddressScreen from '@/screens/user/EditAddressScreen';
-
-export default EditAddressScreen;
+export { default } from '@/components/user/EditAddressScreen';

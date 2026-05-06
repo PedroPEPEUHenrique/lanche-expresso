@@ -16,7 +16,7 @@ export default function AddressScreen() {
     bairro: '', cidade: '', uf: '', cep: '',
   });
 
-  const set = (field: string) => (val: string) => setForm(f => ({ ...f, [field]: val }));
+  const set = (field: string) => (val: string) => setForm((f) => ({ ...f, [field]: val }));
 
   const handleTap = (x: number) => {
     if (x > width / 2) router.replace('/(tabs)');
@@ -29,21 +29,13 @@ export default function AddressScreen() {
     }`;
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-white"
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <KeyboardAvoidingView className="flex-1 bg-white" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <TouchableWithoutFeedback onPress={(e) => handleTap(e.nativeEvent.locationX)}>
         <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none" />
       </TouchableWithoutFeedback>
 
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View className="flex-1 px-7 pt-12 pb-10">
-          {/* Logo */}
           <View className="items-center mb-5">
             <Image
               source={require('../../assets/images/logo02.png')}
@@ -52,138 +44,73 @@ export default function AddressScreen() {
             />
           </View>
 
-          <Text className="text-lg text-gray-500 text-center mb-5 font-medium">
-            Informe seu endereço
-          </Text>
+          <Text className="text-lg text-gray-500 text-center mb-5 font-medium">Informe seu endereço</Text>
 
           <View className="gap-y-3">
-            {/* Endereço + Número */}
             <View className="flex-row gap-x-3">
               <View className="flex-[1.8]">
                 <Text className="text-sm font-semibold text-gray-600 mb-1.5">Endereço</Text>
                 <View className={inputClass('endereco')}>
                   <Ionicons name="location-outline" size={16} color={focused === 'endereco' ? '#7EC8E3' : '#aaa'} />
-                  <TextInput
-                    className="flex-1 ml-2 text-gray-800 text-sm"
-                    value={form.endereco}
-                    onChangeText={set('endereco')}
-                    onFocus={() => setFocused('endereco')}
-                    onBlur={() => setFocused(null)}
-                    placeholderTextColor="#bbb"
-                  />
+                  <TextInput className="flex-1 ml-2 text-gray-800 text-sm" value={form.endereco} onChangeText={set('endereco')} onFocus={() => setFocused('endereco')} onBlur={() => setFocused(null)} placeholderTextColor="#bbb" />
                 </View>
               </View>
               <View className="flex-1">
                 <Text className="text-sm font-semibold text-gray-600 mb-1.5">Número</Text>
                 <View className={inputClass('numero')}>
-                  <TextInput
-                    className="flex-1 text-gray-800 text-sm"
-                    value={form.numero}
-                    onChangeText={set('numero')}
-                    keyboardType="number-pad"
-                    onFocus={() => setFocused('numero')}
-                    onBlur={() => setFocused(null)}
-                    placeholderTextColor="#bbb"
-                  />
+                  <TextInput className="flex-1 text-gray-800 text-sm" value={form.numero} onChangeText={set('numero')} keyboardType="number-pad" onFocus={() => setFocused('numero')} onBlur={() => setFocused(null)} placeholderTextColor="#bbb" />
                 </View>
               </View>
             </View>
 
-            {/* Complemento */}
             <View>
               <Text className="text-sm font-semibold text-gray-600 mb-1.5">Complemento</Text>
               <View className={inputClass('complemento')}>
                 <Ionicons name="business-outline" size={16} color={focused === 'complemento' ? '#7EC8E3' : '#aaa'} />
-                <TextInput
-                  className="flex-1 ml-2 text-gray-800 text-sm"
-                  value={form.complemento}
-                  onChangeText={set('complemento')}
-                  onFocus={() => setFocused('complemento')}
-                  onBlur={() => setFocused(null)}
-                  placeholderTextColor="#bbb"
-                  placeholder="Apto, bloco, ref..."
-                />
+                <TextInput className="flex-1 ml-2 text-gray-800 text-sm" value={form.complemento} onChangeText={set('complemento')} onFocus={() => setFocused('complemento')} onBlur={() => setFocused(null)} placeholderTextColor="#bbb" placeholder="Apto, bloco, ref..." />
               </View>
             </View>
 
-            {/* Bairro */}
             <View>
               <Text className="text-sm font-semibold text-gray-600 mb-1.5">Bairro</Text>
               <View className={inputClass('bairro')}>
                 <Ionicons name="map-outline" size={16} color={focused === 'bairro' ? '#7EC8E3' : '#aaa'} />
-                <TextInput
-                  className="flex-1 ml-2 text-gray-800 text-sm"
-                  value={form.bairro}
-                  onChangeText={set('bairro')}
-                  onFocus={() => setFocused('bairro')}
-                  onBlur={() => setFocused(null)}
-                  placeholderTextColor="#bbb"
-                />
+                <TextInput className="flex-1 ml-2 text-gray-800 text-sm" value={form.bairro} onChangeText={set('bairro')} onFocus={() => setFocused('bairro')} onBlur={() => setFocused(null)} placeholderTextColor="#bbb" />
               </View>
             </View>
 
-            {/* Cidade + UF */}
             <View className="flex-row gap-x-3">
               <View className="flex-[1.8]">
                 <Text className="text-sm font-semibold text-gray-600 mb-1.5">Cidade</Text>
                 <View className={inputClass('cidade')}>
-                  <TextInput
-                    className="flex-1 text-gray-800 text-sm"
-                    value={form.cidade}
-                    onChangeText={set('cidade')}
-                    onFocus={() => setFocused('cidade')}
-                    onBlur={() => setFocused(null)}
-                    placeholderTextColor="#bbb"
-                  />
+                  <TextInput className="flex-1 text-gray-800 text-sm" value={form.cidade} onChangeText={set('cidade')} onFocus={() => setFocused('cidade')} onBlur={() => setFocused(null)} placeholderTextColor="#bbb" />
                 </View>
               </View>
               <View className="flex-1">
                 <Text className="text-sm font-semibold text-gray-600 mb-1.5">UF</Text>
                 <View className={inputClass('uf')}>
-                  <TextInput
-                    className="flex-1 text-gray-800 text-sm text-center"
-                    value={form.uf}
-                    onChangeText={set('uf')}
-                    autoCapitalize="characters"
-                    maxLength={2}
-                    onFocus={() => setFocused('uf')}
-                    onBlur={() => setFocused(null)}
-                    placeholderTextColor="#bbb"
-                  />
+                  <TextInput className="flex-1 text-gray-800 text-sm text-center" value={form.uf} onChangeText={set('uf')} autoCapitalize="characters" maxLength={2} onFocus={() => setFocused('uf')} onBlur={() => setFocused(null)} placeholderTextColor="#bbb" />
                 </View>
               </View>
             </View>
 
-            {/* CEP */}
             <View>
               <Text className="text-sm font-semibold text-gray-600 mb-1.5">CEP</Text>
               <View className={inputClass('cep')}>
                 <Ionicons name="barcode-outline" size={16} color={focused === 'cep' ? '#7EC8E3' : '#aaa'} />
-                <TextInput
-                  className="flex-1 ml-2 text-gray-800 text-sm"
-                  value={form.cep}
-                  onChangeText={set('cep')}
-                  keyboardType="number-pad"
-                  maxLength={9}
-                  onFocus={() => setFocused('cep')}
-                  onBlur={() => setFocused(null)}
-                  placeholder="00000-000"
-                  placeholderTextColor="#bbb"
-                />
+                <TextInput className="flex-1 ml-2 text-gray-800 text-sm" value={form.cep} onChangeText={set('cep')} keyboardType="number-pad" maxLength={9} onFocus={() => setFocused('cep')} onBlur={() => setFocused(null)} placeholder="00000-000" placeholderTextColor="#bbb" />
               </View>
             </View>
           </View>
 
-          {/* Botão */}
           <TouchableOpacity
-            className="mt-8 bg-brand rounded-2xl h-14 items-center justify-center shadow-sm"
+            className="mt-8 bg-brand rounded-2xl h-14 items-center justify-center"
             activeOpacity={0.85}
             onPress={() => router.replace('/(tabs)')}
           >
             <Text className="text-white text-base font-bold tracking-wide">Concluir Cadastro</Text>
           </TouchableOpacity>
 
-          {/* Dica de navegação */}
           <View className="flex-row justify-between mt-auto pt-6 opacity-30">
             <Text className="text-xs text-gray-400">← voltar</Text>
             <Text className="text-xs text-gray-400">avançar →</Text>

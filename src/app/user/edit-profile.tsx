@@ -1,3 +1,1 @@
-import EditProfileScreen from '@/screens/user/EditProfileScreen';
-
-export default EditProfileScreen;
+export { default } from '@/components/user/EditProfileScreen';

@@ -23,54 +23,30 @@ const fields: {
 ];
 
 export default function EditProfileScreen() {
-  const [form, setForm] = useState({
-    name: 'Pedro Henrique',
-    email: 'usuario@email.com',
-    whatsapp: '(00) 00000-0000',
-    password: '',
-  });
+  const [form, setForm] = useState({ name: 'Pedro Henrique', email: 'usuario@email.com', whatsapp: '(00) 00000-0000', password: '' });
   const [focused, setFocused] = useState<string | null>(null);
   const [showPass, setShowPass] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const set = (field: string) => (val: string) => setForm(f => ({ ...f, [field]: val }));
+  const set = (field: string) => (val: string) => setForm((f) => ({ ...f, [field]: val }));
 
   const handleSave = () => {
     setSaved(true);
-    setTimeout(() => {
-      setSaved(false);
-      router.back();
-    }, 800);
+    setTimeout(() => { setSaved(false); router.back(); }, 800);
   };
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-white"
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      {/* Header */}
+    <KeyboardAvoidingView className="flex-1 bg-white" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View className="flex-row items-center px-5 pt-14 pb-4 border-b border-gray-100">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="w-10 h-10 rounded-xl bg-gray-100 items-center justify-center mr-4"
-        >
+        <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 rounded-xl bg-gray-100 items-center justify-center mr-4">
           <Ionicons name="arrow-back" size={20} color="#333" />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-gray-800 flex-1">Meus Dados</Text>
-        <Image
-          source={require('../../../assets/images/logo02.png')}
-          style={{ width: 80, height: 34 }}
-          resizeMode="contain"
-        />
+        <Image source={require('../../../assets/images/logo02.png')} style={{ width: 80, height: 34 }} resizeMode="contain" />
       </View>
 
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View className="px-5 pt-6 pb-10">
-          {/* Avatar */}
           <View className="items-center mb-6">
             <View className="w-20 h-20 rounded-full bg-brand items-center justify-center mb-3" style={styles.avatarShadow}>
               <Ionicons name="person" size={38} color="#fff" />
@@ -81,21 +57,12 @@ export default function EditProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Campos */}
           <View className="gap-y-4">
             {fields.map(({ label, field, keyboard, icon, autoCapitalize, secure }) => (
               <View key={field}>
                 <Text className="text-sm font-semibold text-gray-600 mb-1.5">{label}</Text>
-                <View
-                  className={`flex-row items-center h-12 border-[1.5px] rounded-xl px-3 bg-sky-50 ${
-                    focused === field ? 'border-brand' : 'border-gray-200'
-                  }`}
-                >
-                  <Ionicons
-                    name={icon}
-                    size={18}
-                    color={focused === field ? '#7EC8E3' : '#aaa'}
-                  />
+                <View className={`flex-row items-center h-12 border-[1.5px] rounded-xl px-3 bg-sky-50 ${focused === field ? 'border-brand' : 'border-gray-200'}`}>
+                  <Ionicons name={icon} size={18} color={focused === field ? '#7EC8E3' : '#aaa'} />
                   <TextInput
                     className="flex-1 ml-2 text-gray-800 text-base"
                     value={form[field as keyof typeof form]}
@@ -109,12 +76,8 @@ export default function EditProfileScreen() {
                     placeholder={secure ? '••••••••' : undefined}
                   />
                   {secure && (
-                    <TouchableOpacity onPress={() => setShowPass(s => !s)}>
-                      <Ionicons
-                        name={showPass ? 'eye-outline' : 'eye-off-outline'}
-                        size={18}
-                        color="#aaa"
-                      />
+                    <TouchableOpacity onPress={() => setShowPass((s) => !s)}>
+                      <Ionicons name={showPass ? 'eye-outline' : 'eye-off-outline'} size={18} color="#aaa" />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -122,29 +85,16 @@ export default function EditProfileScreen() {
             ))}
           </View>
 
-          {/* Botão salvar */}
           <TouchableOpacity
-            className={`mt-8 rounded-2xl h-14 items-center justify-center flex-row gap-x-2 ${
-              saved ? 'bg-green-400' : 'bg-brand'
-            }`}
+            className={`mt-8 rounded-2xl h-14 items-center justify-center flex-row gap-x-2 ${saved ? 'bg-green-400' : 'bg-brand'}`}
             activeOpacity={0.85}
             onPress={handleSave}
           >
-            <Ionicons
-              name={saved ? 'checkmark-circle-outline' : 'save-outline'}
-              size={20}
-              color="#fff"
-            />
-            <Text className="text-white text-base font-bold">
-              {saved ? 'Salvo!' : 'Salvar Alterações'}
-            </Text>
+            <Ionicons name={saved ? 'checkmark-circle-outline' : 'save-outline'} size={20} color="#fff" />
+            <Text className="text-white text-base font-bold">{saved ? 'Salvo!' : 'Salvar Alterações'}</Text>
           </TouchableOpacity>
 
-          {/* Cancelar */}
-          <TouchableOpacity
-            onPress={() => router.back()}
-            className="mt-3 items-center py-2"
-          >
+          <TouchableOpacity onPress={() => router.back()} className="mt-3 items-center py-2">
             <Text className="text-gray-400 text-base">Cancelar</Text>
           </TouchableOpacity>
         </View>

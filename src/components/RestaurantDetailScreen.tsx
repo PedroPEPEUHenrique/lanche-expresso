@@ -1,11 +1,12 @@
 import React, { useRef } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
+  View, Text, TouchableOpacity,
   Image, Animated, StyleSheet,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useCart } from '../hooks/useCart';
+import { useCart } from '../store/cartStore';
+import { Product } from '../types';
 
 export default function RestaurantDetailScreen() {
   const params = useLocalSearchParams();
@@ -21,26 +22,17 @@ export default function RestaurantDetailScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      {/* Hero image animada */}
       <Animated.Image
         source={{ uri: restaurant.image }}
         style={[styles.heroImage, { height: imageHeight }]}
         resizeMode="cover"
       />
 
-      {/* Botão voltar */}
-      <TouchableOpacity
-        style={styles.backBtn}
-        onPress={() => router.back()}
-      >
+      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
         <Ionicons name="arrow-back" size={20} color="#fff" />
       </TouchableOpacity>
 
-      {/* Botão carrinho */}
-      <TouchableOpacity
-        style={styles.cartBtnFixed}
-        onPress={() => router.push('/cart')}
-      >
+      <TouchableOpacity style={styles.cartBtnFixed} onPress={() => router.push('/cart')}>
         <Ionicons name="cart-outline" size={20} color="#fff" />
         {totalItems > 0 && (
           <View style={styles.badge}>
@@ -59,11 +51,9 @@ export default function RestaurantDetailScreen() {
         contentContainerStyle={{ paddingTop: 230 }}
       >
         <View className="bg-white rounded-t-3xl px-5 pt-5 min-h-[500px]" style={styles.contentShadow}>
-          {/* Info restaurante */}
           <Text className="text-2xl font-extrabold text-gray-800">{restaurant.name}</Text>
           <Text className="text-sm text-gray-400 mt-1">{restaurant.address}</Text>
 
-          {/* Tags de info */}
           <View className="flex-row flex-wrap gap-2 mt-3 mb-2">
             <View className="flex-row items-center bg-amber-50 border border-amber-100 rounded-xl px-3 py-1.5 gap-x-1">
               <Ionicons name="star" size={13} color="#FBBF24" />
@@ -81,28 +71,19 @@ export default function RestaurantDetailScreen() {
 
           <Text className="text-lg font-bold text-gray-800 mt-4 mb-3">Ofertas</Text>
 
-          {/* Produtos */}
-          {restaurant.products.map((product: any) => (
+          {restaurant.products.map((product: Product) => (
             <TouchableOpacity
               key={product.id}
               className="flex-row mb-4 p-3 rounded-2xl bg-gray-50"
-              style={styles.productCard}
               activeOpacity={0.85}
               onPress={() =>
                 router.push({
                   pathname: '/product/[id]',
-                  params: {
-                    id: product.id,
-                    product: JSON.stringify(product),
-                    restaurant: JSON.stringify(restaurant),
-                  },
+                  params: { id: product.id, product: JSON.stringify(product), restaurant: JSON.stringify(restaurant) },
                 })
               }
             >
-              <Image
-                source={{ uri: product.image }}
-                className="w-[85px] h-[85px] rounded-xl bg-gray-200"
-              />
+              <Image source={{ uri: product.image }} className="w-[85px] h-[85px] rounded-xl bg-gray-200" />
               <View className="flex-1 ml-3 justify-between">
                 <View>
                   <Text className="text-sm font-bold text-gray-800">{product.name}</Text>
@@ -135,61 +116,25 @@ export default function RestaurantDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  heroImage: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    width: '100%',
-  },
+  heroImage: { position: 'absolute', top: 0, left: 0, right: 0, width: '100%' },
   backBtn: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    borderRadius: 20,
-    width: 38,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: 'absolute', top: 50, left: 16, zIndex: 10,
+    backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 20,
+    width: 38, height: 38, alignItems: 'center', justifyContent: 'center',
   },
   cartBtnFixed: {
-    position: 'absolute',
-    top: 50,
-    right: 16,
-    zIndex: 10,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    borderRadius: 20,
-    width: 38,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: 'absolute', top: 50, right: 16, zIndex: 10,
+    backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 20,
+    width: 38, height: 38, alignItems: 'center', justifyContent: 'center',
   },
   badge: {
-    position: 'absolute',
-    top: -3,
-    right: -3,
-    backgroundColor: '#FF6B6B',
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
+    position: 'absolute', top: -3, right: -3,
+    backgroundColor: '#FF6B6B', borderRadius: 8,
+    minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3,
   },
-  badgeText: {
-    color: '#fff',
-    fontSize: 9,
-    fontWeight: '700',
-  },
+  badgeText: { color: '#fff', fontSize: 9, fontWeight: '700' },
   contentShadow: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  productCard: {
+    shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.06, shadowRadius: 12, elevation: 5,
   },
 });

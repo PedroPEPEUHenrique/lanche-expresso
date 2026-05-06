@@ -30,7 +30,7 @@ export default function RegisterScreen() {
   const [focused, setFocused] = useState<string | null>(null);
   const [showPass, setShowPass] = useState(false);
 
-  const set = (field: string) => (val: string) => setForm(f => ({ ...f, [field]: val }));
+  const set = (field: string) => (val: string) => setForm((f) => ({ ...f, [field]: val }));
 
   const handleTap = (x: number) => {
     if (x > width / 2) router.push('/address');
@@ -38,21 +38,13 @@ export default function RegisterScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-white"
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <KeyboardAvoidingView className="flex-1 bg-white" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <TouchableWithoutFeedback onPress={(e) => handleTap(e.nativeEvent.locationX)}>
         <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none" />
       </TouchableWithoutFeedback>
 
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View className="flex-1 px-8 pt-14 pb-10">
-          {/* Logo */}
           <View className="items-center mb-6">
             <Image
               source={require('../../assets/images/logo02.png')}
@@ -61,25 +53,14 @@ export default function RegisterScreen() {
             />
           </View>
 
-          <Text className="text-lg text-gray-500 text-center mb-6 font-medium">
-            Criar sua conta
-          </Text>
+          <Text className="text-lg text-gray-500 text-center mb-6 font-medium">Criar sua conta</Text>
 
-          {/* Campos */}
           <View className="w-full gap-y-3">
             {fields.map(({ label, field, keyboard, icon, secure, autoCapitalize }) => (
               <View key={field}>
                 <Text className="text-sm font-semibold text-gray-600 mb-1.5">{label}</Text>
-                <View
-                  className={`flex-row items-center h-12 border-[1.5px] rounded-xl px-3 bg-sky-50 ${
-                    focused === field ? 'border-brand' : 'border-gray-200'
-                  }`}
-                >
-                  <Ionicons
-                    name={icon}
-                    size={18}
-                    color={focused === field ? '#7EC8E3' : '#aaa'}
-                  />
+                <View className={`flex-row items-center h-12 border-[1.5px] rounded-xl px-3 bg-sky-50 ${focused === field ? 'border-brand' : 'border-gray-200'}`}>
+                  <Ionicons name={icon} size={18} color={focused === field ? '#7EC8E3' : '#aaa'} />
                   <TextInput
                     className="flex-1 ml-2 text-gray-800 text-base"
                     value={form[field as keyof typeof form]}
@@ -92,12 +73,8 @@ export default function RegisterScreen() {
                     placeholderTextColor="#bbb"
                   />
                   {secure && (
-                    <TouchableOpacity onPress={() => setShowPass(s => !s)}>
-                      <Ionicons
-                        name={showPass ? 'eye-outline' : 'eye-off-outline'}
-                        size={18}
-                        color="#aaa"
-                      />
+                    <TouchableOpacity onPress={() => setShowPass((s) => !s)}>
+                      <Ionicons name={showPass ? 'eye-outline' : 'eye-off-outline'} size={18} color="#aaa" />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -105,16 +82,14 @@ export default function RegisterScreen() {
             ))}
           </View>
 
-          {/* Botão */}
           <TouchableOpacity
-            className="mt-8 bg-brand rounded-2xl h-14 items-center justify-center shadow-sm"
+            className="mt-8 bg-brand rounded-2xl h-14 items-center justify-center"
             activeOpacity={0.85}
             onPress={() => router.push('/address')}
           >
             <Text className="text-white text-base font-bold tracking-wide">Próximo Passo</Text>
           </TouchableOpacity>
 
-          {/* Dica de navegação */}
           <View className="flex-row justify-between mt-auto pt-8 opacity-30">
             <Text className="text-xs text-gray-400">← voltar</Text>
             <Text className="text-xs text-gray-400">avançar →</Text>
