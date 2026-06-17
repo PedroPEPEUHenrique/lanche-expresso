@@ -1,55 +1,64 @@
-import { api } from './api';
 import { CartItem } from '../types';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export interface ApiOrder {
   id: string;
+  date: string;
   restaurantName: string;
   restaurantImage: string;
-  date: string;
   status: string;
-  subtotal: number;
   deliveryFee: number;
   total: number;
 }
 
-function mapPedido(p: any): ApiOrder {
-  return {
-    id: String(p.id_pedido),
-    restaurantName: p.nome_empresa,
-    restaurantImage: p.icone_empresa || '',
-    date: p.dt_pedido,
-    status: p.status,
-    subtotal: p.vl_subtotal,
-    deliveryFee: p.vl_taxa_entrega,
-    total: p.vl_total,
-  };
-}
-
 export async function criarPedido(
   items: CartItem[],
-  idUsuario: string,
+  userId: number,
   subtotal: number,
   deliveryFee: number,
   total: number
 ): Promise<void> {
-  const restaurant = items[0].restaurant;
-  await api.post('/pedidos', {
-    idEmpresa: parseInt(restaurant.id),
-    idUsuario: parseInt(idUsuario),
-    vlSubtotal: subtotal,
-    vlTaxaEntrega: deliveryFee,
-    vlTotal: total,
-    itens: items.map((i) => ({
-      idProduto: parseInt(i.product.id),
-      quantidade: i.quantity,
-      vlUnitario: i.product.price,
-      vlTotal: parseFloat((i.product.price * i.quantity).toFixed(2)),
-      observacao: i.observations || '',
-    })),
+  if (!items.length) throw new Error('Carrinho vazio');
+
+  const idEmpresa = Number(items[0].restaurant.id);
+  const itens = items.map((i) => ({
+    idProduto: Number(i.product.id),
+    observacao: i.observations ?? '',
+    quantidade: i.quantity,
+    vlUnitario: i.product.price,
+    vlTotal: i.product.price * i.quantity,
+  }));
+
+  const res = await fetch(`${API_URL}/pedidos`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      idEmpresa,
+      idUsuario: userId,
+      vlSubtotal: subtotal,
+      vlTaxaEntrega: deliveryFee,
+      vlTotal: total,
+      itens,
+    }),
   });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any).mensagem || 'Erro ao criar pedido');
+  }
 }
 
-export async function listarPedidosPorUsuario(idUsuario: string): Promise<ApiOrder[]> {
-  const data = await api.get<any[]>(`/pedidos/usuario/${idUsuario}`);
-  return data.map(mapPedido);
+export async function listarPedidosPorUsuario(userId: number): Promise<ApiOrder[]> {
+  const res = await fetch(`${API_URL}/pedidos/usuario/${userId}`);
+  if (!res.ok) throw new Error('Erro ao buscar pedidos');
+  const data = await res.json();
+  return data.map((p: any) => ({
+    id: String(p.id_pedido),
+    date: p.dt_pedido ?? '',
+    restaurantName: p.nome_empresa ?? '',
+    restaurantImage: p.icone_empresa ?? '',
+    status: p.status ?? 'pendente',
+    deliveryFee: p.vl_taxa_entrega ?? 0,
+    total: p.vl_total ?? 0,
+  }));
 }

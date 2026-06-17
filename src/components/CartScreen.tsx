@@ -20,10 +20,11 @@ const paymentMethods: { id: string; label: string; icon: IoniconName }[] = [
 ];
 
 function CheckoutModal({
-  visible, onClose, onConfirm, total,
+  visible, onClose, onSuccess, onConfirm, total,
 }: {
   visible: boolean;
   onClose: () => void;
+  onSuccess: () => void;
   onConfirm: (paymentMethod: string) => Promise<void>;
   total: number;
 }) {
@@ -46,10 +47,16 @@ function CheckoutModal({
     }
   };
 
-  const handleClose = () => {
+  const handleCancel = () => {
     setStep('payment');
     setMethod(null);
     onClose();
+  };
+
+  const handleFinish = () => {
+    setStep('payment');
+    setMethod(null);
+    onSuccess();
   };
 
   return (
@@ -90,7 +97,7 @@ function CheckoutModal({
                 {loading ? <ActivityIndicator color="#fff" /> : <Text className="text-white text-base font-bold">Confirmar Pedido</Text>}
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={handleClose} className="items-center py-2">
+              <TouchableOpacity onPress={handleCancel} className="items-center py-2">
                 <Text className="text-gray-400 text-base">Cancelar</Text>
               </TouchableOpacity>
             </>
@@ -121,7 +128,7 @@ function CheckoutModal({
                 </View>
               </View>
 
-              <TouchableOpacity className="bg-brand rounded-2xl h-14 items-center justify-center" onPress={handleClose} activeOpacity={0.85}>
+              <TouchableOpacity className="bg-brand rounded-2xl h-14 items-center justify-center" onPress={handleFinish} activeOpacity={0.85}>
                 <Text className="text-white text-base font-bold">Fechar</Text>
               </TouchableOpacity>
             </>
@@ -142,7 +149,9 @@ export default function CartScreen() {
     await criarPedido(items, user.id, subtotal, deliveryFee, total);
   };
 
-  const handleClose = () => {
+  const handleCloseModal = () => setShowModal(false);
+
+  const handleSuccess = () => {
     setShowModal(false);
     clearCart();
     router.replace('/(tabs)');
@@ -223,7 +232,7 @@ export default function CartScreen() {
         </>
       )}
 
-      <CheckoutModal visible={showModal} onClose={handleClose} onConfirm={handleConfirm} total={total} />
+      <CheckoutModal visible={showModal} onClose={handleCloseModal} onSuccess={handleSuccess} onConfirm={handleConfirm} total={total} />
     </View>
   );
 }
