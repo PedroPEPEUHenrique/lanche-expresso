@@ -1,47 +1,57 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Image,
-  KeyboardAvoidingView, Platform, ScrollView,
-  TouchableWithoutFeedback, Dimensions, StyleSheet,
+  KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
-const { width } = Dimensions.get('window');
+import { useAuthStore } from '../store/authStore';
+import { atualizarUsuario } from '../services/userService';
 
 export default function AddressScreen() {
   const [focused, setFocused] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     endereco: '', numero: '', complemento: '',
     bairro: '', cidade: '', uf: '', cep: '',
   });
+  const { user, updateUser } = useAuthStore();
 
   const set = (field: string) => (val: string) => setForm((f) => ({ ...f, [field]: val }));
-
-  const handleTap = (x: number) => {
-    if (x > width / 2) router.replace('/(tabs)');
-    else router.back();
-  };
 
   const inputClass = (field: string) =>
     `flex-row items-center h-12 border-[1.5px] rounded-xl px-3 bg-sky-50 ${
       focused === field ? 'border-brand' : 'border-gray-200'
     }`;
 
+  const handleConcluir = async () => {
+    if (!user) { router.replace('/'); return; }
+    setLoading(true);
+    try {
+      const updated = await atualizarUsuario(user.id, {
+        endereco: form.endereco,
+        numero: form.numero,
+        complemento: form.complemento,
+        bairro: form.bairro,
+        cidade: form.cidade,
+        estado: form.uf,
+        cep: form.cep,
+      });
+      updateUser(updated);
+      router.replace('/(tabs)');
+    } catch (err: any) {
+      Alert.alert('Erro', err.message || 'Não foi possível salvar o endereço.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView className="flex-1 bg-white" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <TouchableWithoutFeedback onPress={(e) => handleTap(e.nativeEvent.locationX)}>
-        <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none" />
-      </TouchableWithoutFeedback>
-
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View className="flex-1 px-7 pt-12 pb-10">
           <View className="items-center mb-5">
-            <Image
-              source={require('../../assets/images/logo02.png')}
-              style={{ width: 160, height: 72 }}
-              resizeMode="contain"
-            />
+            <Image source={require('../../assets/images/logo02.png')} style={{ width: 160, height: 72 }} resizeMode="contain" />
           </View>
 
           <Text className="text-lg text-gray-500 text-center mb-5 font-medium">Informe seu endereço</Text>
@@ -67,7 +77,7 @@ export default function AddressScreen() {
               <Text className="text-sm font-semibold text-gray-600 mb-1.5">Complemento</Text>
               <View className={inputClass('complemento')}>
                 <Ionicons name="business-outline" size={16} color={focused === 'complemento' ? '#7EC8E3' : '#aaa'} />
-                <TextInput className="flex-1 ml-2 text-gray-800 text-sm" value={form.complemento} onChangeText={set('complemento')} onFocus={() => setFocused('complemento')} onBlur={() => setFocused(null)} placeholderTextColor="#bbb" placeholder="Apto, bloco, ref..." />
+                <TextInput className="flex-1 ml-2 text-gray-800 text-sm" value={form.complemento} onChangeText={set('complemento')} onFocus={() => setFocused('complemento')} onBlur={() => setFocused(null)} placeholder="Apto, bloco, ref..." placeholderTextColor="#bbb" />
               </View>
             </View>
 
@@ -106,15 +116,19 @@ export default function AddressScreen() {
           <TouchableOpacity
             className="mt-8 bg-brand rounded-2xl h-14 items-center justify-center"
             activeOpacity={0.85}
-            onPress={() => router.replace('/(tabs)')}
+            onPress={handleConcluir}
+            disabled={loading}
           >
-            <Text className="text-white text-base font-bold tracking-wide">Concluir Cadastro</Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text className="text-white text-base font-bold tracking-wide">Concluir Cadastro</Text>
+            )}
           </TouchableOpacity>
 
-          <View className="flex-row justify-between mt-auto pt-6 opacity-30">
-            <Text className="text-xs text-gray-400">← voltar</Text>
-            <Text className="text-xs text-gray-400">avançar →</Text>
-          </View>
+          <TouchableOpacity onPress={() => router.replace('/(tabs)')} className="mt-3 items-center py-2">
+            <Text className="text-gray-400 text-base">Pular por agora</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

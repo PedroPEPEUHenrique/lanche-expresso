@@ -1,18 +1,28 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, TouchableOpacity,
-  Image, Animated, StyleSheet,
+  Image, Animated, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../store/cartStore';
-import { Product } from '../types';
+import { Product, Restaurant } from '../types';
+import { listarProdutosPorEmpresa } from '../services/restaurantService';
 
 export default function RestaurantDetailScreen() {
   const params = useLocalSearchParams();
-  const restaurant = JSON.parse(params.restaurant as string);
+  const restaurant: Restaurant = JSON.parse(params.restaurant as string);
   const { addItem, totalItems } = useCart();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    listarProdutosPorEmpresa(restaurant.id)
+      .then(setProducts)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [restaurant.id]);
 
   const imageHeight = scrollY.interpolate({
     inputRange: [0, 130],
@@ -23,7 +33,7 @@ export default function RestaurantDetailScreen() {
   return (
     <View className="flex-1 bg-white">
       <Animated.Image
-        source={{ uri: restaurant.image }}
+        source={{ uri: restaurant.image || undefined }}
         style={[styles.heroImage, { height: imageHeight }]}
         resizeMode="cover"
       />
@@ -55,10 +65,6 @@ export default function RestaurantDetailScreen() {
           <Text className="text-sm text-gray-400 mt-1">{restaurant.address}</Text>
 
           <View className="flex-row flex-wrap gap-2 mt-3 mb-2">
-            <View className="flex-row items-center bg-amber-50 border border-amber-100 rounded-xl px-3 py-1.5 gap-x-1">
-              <Ionicons name="star" size={13} color="#FBBF24" />
-              <Text className="text-xs font-bold text-amber-600">{restaurant.rating}</Text>
-            </View>
             <View className="flex-row items-center bg-sky-50 border border-sky-100 rounded-xl px-3 py-1.5 gap-x-1">
               <Ionicons name="bicycle-outline" size={13} color="#7EC8E3" />
               <Text className="text-xs font-semibold text-sky-600">R$ {restaurant.deliveryFee.toFixed(2)}</Text>
@@ -71,42 +77,49 @@ export default function RestaurantDetailScreen() {
 
           <Text className="text-lg font-bold text-gray-800 mt-4 mb-3">Ofertas</Text>
 
-          {restaurant.products.map((product: Product) => (
-            <TouchableOpacity
-              key={product.id}
-              className="flex-row mb-4 p-3 rounded-2xl bg-gray-50"
-              activeOpacity={0.85}
-              onPress={() =>
-                router.push({
-                  pathname: '/product/[id]',
-                  params: { id: product.id, product: JSON.stringify(product), restaurant: JSON.stringify(restaurant) },
-                })
-              }
-            >
-              <Image source={{ uri: product.image }} className="w-[85px] h-[85px] rounded-xl bg-gray-200" />
-              <View className="flex-1 ml-3 justify-between">
-                <View>
-                  <Text className="text-sm font-bold text-gray-800">{product.name}</Text>
-                  <Text className="text-xs text-gray-400 mt-1 leading-4" numberOfLines={2}>
-                    {product.description}
-                  </Text>
+          {loading ? (
+            <View className="items-center py-10">
+              <ActivityIndicator size="large" color="#7EC8E3" />
+            </View>
+          ) : products.length === 0 ? (
+            <View className="items-center py-10">
+              <Ionicons name="fast-food-outline" size={48} color="#ddd" />
+              <Text className="text-gray-400 mt-3">Nenhum produto disponível</Text>
+            </View>
+          ) : (
+            products.map((product: Product) => (
+              <TouchableOpacity
+                key={product.id}
+                className="flex-row mb-4 p-3 rounded-2xl bg-gray-50"
+                activeOpacity={0.85}
+                onPress={() =>
+                  router.push({
+                    pathname: '/product/[id]',
+                    params: { id: product.id, product: JSON.stringify(product), restaurant: JSON.stringify(restaurant) },
+                  })
+                }
+              >
+                <Image source={{ uri: product.image || undefined }} className="w-[85px] h-[85px] rounded-xl bg-gray-200" />
+                <View className="flex-1 ml-3 justify-between">
+                  <View>
+                    <Text className="text-sm font-bold text-gray-800">{product.name}</Text>
+                    <Text className="text-xs text-gray-400 mt-1 leading-4" numberOfLines={2}>{product.description}</Text>
+                  </View>
+                  <View className="flex-row items-center justify-between mt-2">
+                    <Text className="text-base font-extrabold text-brand-dark">R$ {product.price.toFixed(2)}</Text>
+                    <TouchableOpacity
+                      className="bg-brand rounded-xl px-3 py-1.5 flex-row items-center gap-x-1"
+                      onPress={() => addItem(product, restaurant)}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="add" size={14} color="#fff" />
+                      <Text className="text-white text-xs font-bold">Adicionar</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <View className="flex-row items-center justify-between mt-2">
-                  <Text className="text-base font-extrabold text-brand-dark">
-                    R$ {product.price.toFixed(2)}
-                  </Text>
-                  <TouchableOpacity
-                    className="bg-brand rounded-xl px-3 py-1.5 flex-row items-center gap-x-1"
-                    onPress={() => addItem(product, restaurant)}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name="add" size={14} color="#fff" />
-                    <Text className="text-white text-xs font-bold">Adicionar</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            ))
+          )}
 
           <View className="h-10" />
         </View>

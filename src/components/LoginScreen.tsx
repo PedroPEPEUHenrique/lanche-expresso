@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Image,
-  KeyboardAvoidingView, Platform, ScrollView,
-  TouchableWithoutFeedback, Dimensions, StyleSheet,
+  KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
-const { width } = Dimensions.get('window');
+import { login } from '../services/authService';
+import { useAuthStore } from '../store/authStore';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -15,17 +14,32 @@ export default function LoginScreen() {
   const [showPass, setShowPass] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passFocused, setPassFocused] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { setAuth, token } = useAuthStore();
 
-  const handleTap = (x: number) => {
-    if (x > width / 2) router.replace('/(tabs)');
+  useEffect(() => {
+    if (token) router.replace('/(tabs)');
+  }, []);
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Atenção', 'Preencha e-mail e senha.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { token: t, user } = await login(email.trim(), password);
+      setAuth(t, user);
+      router.replace('/(tabs)');
+    } catch (err: any) {
+      Alert.alert('Erro ao entrar', err.message || 'E-mail ou senha inválidos.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <KeyboardAvoidingView className="flex-1 bg-white" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <TouchableWithoutFeedback onPress={(e) => handleTap(e.nativeEvent.locationX)}>
-        <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none" />
-      </TouchableWithoutFeedback>
-
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View className="flex-1 px-8 pt-20 pb-10">
           <View className="items-center mb-10">
@@ -81,9 +95,14 @@ export default function LoginScreen() {
           <TouchableOpacity
             className="mt-10 bg-brand rounded-2xl h-14 items-center justify-center"
             activeOpacity={0.85}
-            onPress={() => router.replace('/(tabs)')}
+            onPress={handleLogin}
+            disabled={loading}
           >
-            <Text className="text-white text-base font-bold tracking-wide">Acessar</Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text className="text-white text-base font-bold tracking-wide">Acessar</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.push('/register')} activeOpacity={0.7} className="mt-5 items-center">
@@ -92,11 +111,6 @@ export default function LoginScreen() {
               <Text className="text-brand-dark font-bold">Criar minha conta</Text>
             </Text>
           </TouchableOpacity>
-
-          <View className="flex-row justify-between mt-auto pt-8 opacity-30">
-            <Text className="text-xs text-gray-400">← voltar</Text>
-            <Text className="text-xs text-gray-400">avançar →</Text>
-          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

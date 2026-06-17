@@ -1,17 +1,25 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Image,
-  ScrollView, KeyboardAvoidingView, Platform, StyleSheet,
+  ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '../../store/authStore';
+import { atualizarUsuario } from '../../services/userService';
 
 export default function EditAddressScreen() {
+  const { user, updateUser } = useAuthStore();
   const [focused, setFocused] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    endereco: 'Rua das Flores', numero: '123', complemento: 'Apto 45',
-    bairro: 'Centro', cidade: 'São Paulo', uf: 'SP', cep: '01310-100',
+    endereco: user?.endereco ?? '',
+    numero: user?.numero ?? '',
+    complemento: user?.complemento ?? '',
+    bairro: user?.bairro ?? '',
+    cidade: user?.cidade ?? '',
+    uf: user?.estado ?? '',
+    cep: user?.cep ?? '',
   });
 
   const set = (field: string) => (val: string) => setForm((f) => ({ ...f, [field]: val }));
@@ -21,9 +29,26 @@ export default function EditAddressScreen() {
       focused === field ? 'border-brand' : 'border-gray-200'
     }`;
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => { setSaved(false); router.back(); }, 800);
+  const handleSave = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      await atualizarUsuario(user.id, {
+        endereco: form.endereco,
+        numero: form.numero,
+        complemento: form.complemento,
+        bairro: form.bairro,
+        cidade: form.cidade,
+        estado: form.uf,
+        cep: form.cep,
+      });
+      updateUser({ endereco: form.endereco, numero: form.numero, complemento: form.complemento, bairro: form.bairro, cidade: form.cidade, estado: form.uf, cep: form.cep });
+      router.back();
+    } catch (err: any) {
+      Alert.alert('Erro', err.message || 'Não foi possível salvar o endereço.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -66,7 +91,7 @@ export default function EditAddressScreen() {
               <Text className="text-sm font-semibold text-gray-600 mb-1.5">Complemento</Text>
               <View className={inputClass('complemento')}>
                 <Ionicons name="business-outline" size={16} color={focused === 'complemento' ? '#7EC8E3' : '#aaa'} />
-                <TextInput className="flex-1 ml-2 text-gray-800 text-sm" value={form.complemento} onChangeText={set('complemento')} onFocus={() => setFocused('complemento')} onBlur={() => setFocused(null)} placeholderTextColor="#bbb" placeholder="Apto, bloco, ref..." />
+                <TextInput className="flex-1 ml-2 text-gray-800 text-sm" value={form.complemento} onChangeText={set('complemento')} onFocus={() => setFocused('complemento')} onBlur={() => setFocused(null)} placeholder="Apto, bloco, ref..." placeholderTextColor="#bbb" />
               </View>
             </View>
 
@@ -103,12 +128,19 @@ export default function EditAddressScreen() {
           </View>
 
           <TouchableOpacity
-            className={`mt-8 rounded-2xl h-14 items-center justify-center flex-row gap-x-2 ${saved ? 'bg-green-400' : 'bg-brand'}`}
+            className="mt-8 bg-brand rounded-2xl h-14 items-center justify-center flex-row gap-x-2"
             activeOpacity={0.85}
             onPress={handleSave}
+            disabled={loading}
           >
-            <Ionicons name={saved ? 'checkmark-circle-outline' : 'save-outline'} size={20} color="#fff" />
-            <Text className="text-white text-base font-bold">{saved ? 'Salvo!' : 'Salvar Endereço'}</Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Ionicons name="save-outline" size={20} color="#fff" />
+                <Text className="text-white text-base font-bold">Salvar Endereço</Text>
+              </>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.back()} className="mt-3 items-center py-2">

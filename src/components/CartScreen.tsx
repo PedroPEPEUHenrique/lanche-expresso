@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  Image, Modal, StyleSheet,
+  Image, Modal, StyleSheet, Alert, ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../store/cartStore';
-import { useOrders } from '../store/ordersStore';
 import { CartItem } from '../types';
+import { criarPedido } from '../services/orderService';
+import { useAuthStore } from '../store/authStore';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -23,18 +24,26 @@ function CheckoutModal({
 }: {
   visible: boolean;
   onClose: () => void;
-  onConfirm: (paymentMethod: string) => void;
+  onConfirm: (paymentMethod: string) => Promise<void>;
   total: number;
 }) {
   const [method, setMethod] = useState<string | null>(null);
   const [step, setStep] = useState<'payment' | 'tracking'>('payment');
+  const [loading, setLoading] = useState(false);
 
   if (!visible) return null;
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!method) return;
-    onConfirm(method);
-    setStep('tracking');
+    setLoading(true);
+    try {
+      await onConfirm(method);
+      setStep('tracking');
+    } catch (err: any) {
+      Alert.alert('Erro ao finalizar pedido', err.message || 'Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClose = () => {
@@ -57,16 +66,12 @@ function CheckoutModal({
                 {paymentMethods.map((m) => (
                   <TouchableOpacity
                     key={m.id}
-                    className={`flex-1 min-w-[40%] py-4 rounded-2xl border-2 items-center ${
-                      method === m.id ? 'border-brand bg-brand' : 'border-gray-200 bg-white'
-                    }`}
+                    className={`flex-1 min-w-[40%] py-4 rounded-2xl border-2 items-center ${method === m.id ? 'border-brand bg-brand' : 'border-gray-200 bg-white'}`}
                     onPress={() => setMethod(m.id)}
                     activeOpacity={0.8}
                   >
                     <Ionicons name={m.icon} size={24} color={method === m.id ? '#fff' : '#555'} />
-                    <Text className={`text-sm font-semibold mt-1 ${method === m.id ? 'text-white' : 'text-gray-600'}`}>
-                      {m.label}
-                    </Text>
+                    <Text className={`text-sm font-semibold mt-1 ${method === m.id ? 'text-white' : 'text-gray-600'}`}>{m.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -77,12 +82,12 @@ function CheckoutModal({
               </View>
 
               <TouchableOpacity
-                className={`bg-brand rounded-2xl h-14 items-center justify-center mb-3 ${!method ? 'opacity-50' : ''}`}
-                disabled={!method}
+                className={`bg-brand rounded-2xl h-14 items-center justify-center mb-3 ${!method || loading ? 'opacity-50' : ''}`}
+                disabled={!method || loading}
                 onPress={handleConfirm}
                 activeOpacity={0.85}
               >
-                <Text className="text-white text-base font-bold">Confirmar Pedido</Text>
+                {loading ? <ActivityIndicator color="#fff" /> : <Text className="text-white text-base font-bold">Confirmar Pedido</Text>}
               </TouchableOpacity>
 
               <TouchableOpacity onPress={handleClose} className="items-center py-2">
@@ -111,18 +116,12 @@ function CheckoutModal({
                 </View>
                 <View className="flex-row justify-between">
                   {['Preparando', 'Saiu', 'Chegando'].map((s, i) => (
-                    <Text key={s} className={`text-xs font-semibold ${i === 0 ? 'text-brand' : 'text-gray-300'}`}>
-                      {s}
-                    </Text>
+                    <Text key={s} className={`text-xs font-semibold ${i === 0 ? 'text-brand' : 'text-gray-300'}`}>{s}</Text>
                   ))}
                 </View>
               </View>
 
-              <TouchableOpacity
-                className="bg-brand rounded-2xl h-14 items-center justify-center"
-                onPress={handleClose}
-                activeOpacity={0.85}
-              >
+              <TouchableOpacity className="bg-brand rounded-2xl h-14 items-center justify-center" onPress={handleClose} activeOpacity={0.85}>
                 <Text className="text-white text-base font-bold">Fechar</Text>
               </TouchableOpacity>
             </>
@@ -135,26 +134,12 @@ function CheckoutModal({
 
 export default function CartScreen() {
   const { items, removeItem, total, subtotal, deliveryFee, clearCart } = useCart();
-  const { addOrder } = useOrders();
+  const { user } = useAuthStore();
   const [showModal, setShowModal] = useState(false);
 
-  const handleConfirm = (paymentMethod: string) => {
-    if (items.length === 0) return;
-    const restaurant = items[0].restaurant;
-    addOrder({
-      restaurantName: restaurant.name,
-      restaurantImage: restaurant.image,
-      items: items.map((i) => ({
-        name: i.product.name,
-        quantity: i.quantity,
-        price: i.product.price,
-        image: i.product.image,
-      })),
-      subtotal,
-      deliveryFee,
-      total,
-      paymentMethod,
-    });
+  const handleConfirm = async (_paymentMethod: string) => {
+    if (!user) throw new Error('Usuário não autenticado.');
+    await criarPedido(items, user.id, subtotal, deliveryFee, total);
   };
 
   const handleClose = () => {
@@ -165,22 +150,15 @@ export default function CartScreen() {
 
   const renderItem = ({ item }: { item: CartItem }) => (
     <View className="flex-row items-center mb-3 p-3 rounded-2xl bg-gray-50">
-      <Image source={{ uri: item.product.image }} className="w-[70px] h-[70px] rounded-xl bg-gray-200" />
+      <Image source={{ uri: item.product.image || undefined }} className="w-[70px] h-[70px] rounded-xl bg-gray-200" />
       <View className="flex-1 ml-3">
         <Text className="text-sm font-bold text-gray-800">{item.product.name}</Text>
         <Text className="text-xs text-gray-400 mt-1" numberOfLines={2}>{item.product.description}</Text>
-        {item.quantity > 1 && (
-          <Text className="text-xs text-brand font-bold mt-1">x{item.quantity}</Text>
-        )}
+        {item.quantity > 1 && <Text className="text-xs text-brand font-bold mt-1">x{item.quantity}</Text>}
       </View>
       <View className="items-end ml-2 gap-y-2">
-        <Text className="text-sm font-bold text-brand-dark">
-          R$ {(item.product.price * item.quantity).toFixed(2)}
-        </Text>
-        <TouchableOpacity
-          onPress={() => removeItem(item.product.id)}
-          className="w-7 h-7 rounded-lg bg-red-100 items-center justify-center"
-        >
+        <Text className="text-sm font-bold text-brand-dark">R$ {(item.product.price * item.quantity).toFixed(2)}</Text>
+        <TouchableOpacity onPress={() => removeItem(item.product.id)} className="w-7 h-7 rounded-lg bg-red-100 items-center justify-center">
           <Ionicons name="trash-outline" size={14} color="#FF6B6B" />
         </TouchableOpacity>
       </View>
@@ -190,17 +168,10 @@ export default function CartScreen() {
   return (
     <View className="flex-1 bg-white">
       <View className="flex-row justify-between items-center px-5 pt-14 pb-4 border-b border-gray-100">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="w-10 h-10 rounded-xl bg-gray-100 items-center justify-center"
-        >
+        <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 rounded-xl bg-gray-100 items-center justify-center">
           <Ionicons name="arrow-back" size={20} color="#333" />
         </TouchableOpacity>
-        <Image
-          source={require('../../assets/images/logo02.png')}
-          style={{ width: 110, height: 46 }}
-          resizeMode="contain"
-        />
+        <Image source={require('../../assets/images/logo02.png')} style={{ width: 110, height: 46 }} resizeMode="contain" />
         <View className="w-10" />
       </View>
 
@@ -210,9 +181,7 @@ export default function CartScreen() {
             <Ionicons name="cart-outline" size={56} color="#ccc" />
           </View>
           <Text className="text-xl font-bold text-gray-700 mb-2">Carrinho vazio</Text>
-          <Text className="text-sm text-gray-400 text-center">
-            Adicione itens de um restaurante para começar seu pedido.
-          </Text>
+          <Text className="text-sm text-gray-400 text-center">Adicione itens de um restaurante para começar seu pedido.</Text>
         </View>
       ) : (
         <>
@@ -246,11 +215,7 @@ export default function CartScreen() {
           />
 
           <View className="px-5 pb-8 pt-3 border-t border-gray-100">
-            <TouchableOpacity
-              className="bg-brand rounded-2xl h-14 items-center justify-center flex-row gap-x-2"
-              onPress={() => setShowModal(true)}
-              activeOpacity={0.85}
-            >
+            <TouchableOpacity className="bg-brand rounded-2xl h-14 items-center justify-center flex-row gap-x-2" onPress={() => setShowModal(true)} activeOpacity={0.85}>
               <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
               <Text className="text-white text-base font-bold">Finalizar Pedido</Text>
             </TouchableOpacity>

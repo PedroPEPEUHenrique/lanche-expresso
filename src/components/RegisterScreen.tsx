@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Image,
-  KeyboardAvoidingView, Platform, ScrollView,
-  TouchableWithoutFeedback, Dimensions, StyleSheet,
+  KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
-const { width } = Dimensions.get('window');
+import { register, login } from '../services/authService';
+import { useAuthStore } from '../store/authStore';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -29,28 +28,39 @@ export default function RegisterScreen() {
   const [form, setForm] = useState({ name: '', email: '', whatsapp: '', password: '' });
   const [focused, setFocused] = useState<string | null>(null);
   const [showPass, setShowPass] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { setAuth } = useAuthStore();
 
   const set = (field: string) => (val: string) => setForm((f) => ({ ...f, [field]: val }));
 
-  const handleTap = (x: number) => {
-    if (x > width / 2) router.push('/address');
-    else router.back();
+  const handleNext = async () => {
+    if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
+      Alert.alert('Atenção', 'Preencha nome, e-mail e senha.');
+      return;
+    }
+    if (form.password.length < 6) {
+      Alert.alert('Atenção', 'A senha deve ter ao menos 6 caracteres.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await register({ nome: form.name.trim(), email: form.email.trim(), senha: form.password, telefone: form.whatsapp || undefined });
+      const { token, user } = await login(form.email.trim(), form.password);
+      setAuth(token, user);
+      router.push('/address');
+    } catch (err: any) {
+      Alert.alert('Erro ao cadastrar', err.message || 'Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <KeyboardAvoidingView className="flex-1 bg-white" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <TouchableWithoutFeedback onPress={(e) => handleTap(e.nativeEvent.locationX)}>
-        <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none" />
-      </TouchableWithoutFeedback>
-
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View className="flex-1 px-8 pt-14 pb-10">
           <View className="items-center mb-6">
-            <Image
-              source={require('../../assets/images/logo02.png')}
-              style={{ width: 160, height: 72 }}
-              resizeMode="contain"
-            />
+            <Image source={require('../../assets/images/logo02.png')} style={{ width: 160, height: 72 }} resizeMode="contain" />
           </View>
 
           <Text className="text-lg text-gray-500 text-center mb-6 font-medium">Criar sua conta</Text>
@@ -85,15 +95,19 @@ export default function RegisterScreen() {
           <TouchableOpacity
             className="mt-8 bg-brand rounded-2xl h-14 items-center justify-center"
             activeOpacity={0.85}
-            onPress={() => router.push('/address')}
+            onPress={handleNext}
+            disabled={loading}
           >
-            <Text className="text-white text-base font-bold tracking-wide">Próximo Passo</Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text className="text-white text-base font-bold tracking-wide">Próximo Passo</Text>
+            )}
           </TouchableOpacity>
 
-          <View className="flex-row justify-between mt-auto pt-8 opacity-30">
-            <Text className="text-xs text-gray-400">← voltar</Text>
-            <Text className="text-xs text-gray-400">avançar →</Text>
-          </View>
+          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} className="mt-4 items-center">
+            <Text className="text-gray-400 text-base">Já tenho conta</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

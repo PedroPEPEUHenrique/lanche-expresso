@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '../store/authStore';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -19,27 +20,29 @@ const options: {
 ];
 
 export default function ProfileScreen() {
+  const { user, clearAuth } = useAuthStore();
+
   const handlePress = (opt: typeof options[0]) => {
-    if (opt.danger) router.replace('/');
-    else if (opt.route) router.push(opt.route as any);
+    if (opt.danger) {
+      clearAuth();
+      router.replace('/');
+    } else if (opt.route) {
+      router.push(opt.route as any);
+    }
   };
 
   return (
     <View className="flex-1 bg-white">
       <View className="items-center pt-14 pb-5 border-b border-gray-100">
-        <Image
-          source={require('../../assets/images/logo02.png')}
-          style={{ width: 140, height: 60 }}
-          resizeMode="contain"
-        />
+        <Image source={require('../../assets/images/logo02.png')} style={{ width: 140, height: 60 }} resizeMode="contain" />
       </View>
 
       <View className="items-center mt-6 mb-6">
         <View className="w-20 h-20 rounded-full bg-brand items-center justify-center mb-3" style={styles.avatarShadow}>
           <Ionicons name="person" size={40} color="#fff" />
         </View>
-        <Text className="text-xl font-bold text-gray-800">Meu Perfil</Text>
-        <Text className="text-sm text-gray-400 mt-0.5">usuario@email.com</Text>
+        <Text className="text-xl font-bold text-gray-800">{user?.nome ?? 'Meu Perfil'}</Text>
+        <Text className="text-sm text-gray-400 mt-0.5">{user?.email ?? ''}</Text>
       </View>
 
       <View className="mx-5 rounded-2xl overflow-hidden bg-gray-50">
