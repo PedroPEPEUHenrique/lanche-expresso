@@ -3,6 +3,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'react-native';
 import '../style/global.css';
 import { useAuthStore } from '../store/authStore';
+import { useFavoritesStore } from '../store/favoritesStore';
 
 function AuthGuard() {
   const { token, _hasHydrated } = useAuthStore();
@@ -10,6 +11,8 @@ function AuthGuard() {
   const router = useRouter();
 
   useEffect(() => {
+    // Espera a reidratação do AsyncStorage: redirecionar antes disso expulsaria
+    // um usuário já logado na abertura do app.
     if (!_hasHydrated) return;
 
     const inProtected =
@@ -27,11 +30,29 @@ function AuthGuard() {
   return null;
 }
 
+/**
+ * Os favoritos vivem no servidor, então acompanham a sessão: carrega ao
+ * autenticar e limpa o cache ao sair, para não vazar dados entre contas.
+ */
+function FavoritesSync() {
+  const { token, _hasHydrated } = useAuthStore();
+  const { carregar, reset } = useFavoritesStore();
+
+  useEffect(() => {
+    if (!_hasHydrated) return;
+    if (token) carregar();
+    else reset();
+  }, [token, _hasHydrated]);
+
+  return null;
+}
+
 export default function RootLayout() {
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <AuthGuard />
+      <FavoritesSync />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="register" />

@@ -1,12 +1,17 @@
-import React, { useCallback } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity } from 'react-native';
+import React, { useCallback, useEffect } from 'react';
+import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useFavorites } from '../store/favoritesStore';
 import { Restaurant } from '../types';
 
 export default function FavoritesScreen() {
-  const { favorites, toggleFavorite } = useFavorites();
+  const { favorites, toggleFavorite, carregar, loading, erro } = useFavorites();
+
+  // Recarrega ao abrir a aba: o favorito pode ter mudado em outro dispositivo.
+  useEffect(() => {
+    carregar();
+  }, []);
 
   const renderItem = useCallback(
     ({ item }: { item: Restaurant }) => (
@@ -16,22 +21,30 @@ export default function FavoritesScreen() {
           router.push({ pathname: '/restaurant/[id]', params: { id: item.id, restaurant: JSON.stringify(item) } })
         }
       >
-        <Image source={{ uri: item.image }} className="w-20 h-20 rounded-xl bg-gray-100" />
+        <Image source={{ uri: item.image || undefined }} className="w-20 h-20 rounded-xl bg-gray-100" />
         <View className="flex-1 ml-3">
           <Text className="text-base font-bold text-gray-800">{item.name}</Text>
-          <Text className="text-xs text-gray-400 mt-1">{item.address}</Text>
+          <Text className="text-xs text-gray-400 mt-1" numberOfLines={1}>{item.address}</Text>
           <View className="flex-row items-center gap-x-1 mt-2">
-            <Ionicons name="star" size={12} color="#FBBF24" />
-            <Text className="text-xs font-semibold text-gray-600">{item.rating}</Text>
+            <Ionicons name="bicycle-outline" size={12} color="#7EC8E3" />
+            <Text className="text-xs text-gray-500">R$ {item.deliveryFee.toFixed(2)}</Text>
           </View>
         </View>
-        <TouchableOpacity onPress={() => toggleFavorite(item)} className="p-2">
+        <TouchableOpacity onPress={() => toggleFavorite(item)} className="p-2" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Ionicons name="heart" size={22} color="#FF6B6B" />
         </TouchableOpacity>
       </TouchableOpacity>
     ),
     [toggleFavorite]
   );
+
+  if (loading && favorites.length === 0) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <ActivityIndicator size="large" color="#7EC8E3" />
+      </View>
+    );
+  }
 
   if (favorites.length === 0) {
     return (
@@ -41,8 +54,13 @@ export default function FavoritesScreen() {
         </View>
         <Text className="text-2xl font-extrabold text-gray-800 mb-2">Seus Favoritos</Text>
         <Text className="text-sm text-gray-400 text-center leading-5">
-          Adicione restaurantes aos favoritos para vê-los aqui!
+          {erro ?? 'Adicione restaurantes aos favoritos para vê-los aqui!'}
         </Text>
+        {erro && (
+          <TouchableOpacity onPress={carregar} className="mt-5 px-5 py-2.5 bg-brand rounded-full">
+            <Text className="text-white font-bold text-sm">Tentar novamente</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   }
@@ -55,6 +73,7 @@ export default function FavoritesScreen() {
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={carregar} tintColor="#7EC8E3" />}
         ListFooterComponent={<View className="h-6" />}
       />
     </View>

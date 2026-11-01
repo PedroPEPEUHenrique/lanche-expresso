@@ -1,6 +1,5 @@
+import { apiFetch } from './apiClient';
 import { CartItem } from '../types';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export interface ApiOrder {
   id: string;
@@ -12,16 +11,18 @@ export interface ApiOrder {
   total: number;
 }
 
+/**
+ * O idUsuario não é enviado: a API o deriva do token, para que um cliente não
+ * possa lançar pedido no nome de outra pessoa.
+ */
 export async function criarPedido(
   items: CartItem[],
-  userId: number,
   subtotal: number,
   deliveryFee: number,
   total: number
 ): Promise<void> {
   if (!items.length) throw new Error('Carrinho vazio');
 
-  const idEmpresa = Number(items[0].restaurant.id);
   const itens = items.map((i) => ({
     idProduto: Number(i.product.id),
     observacao: i.observations ?? '',
@@ -30,29 +31,24 @@ export async function criarPedido(
     vlTotal: i.product.price * i.quantity,
   }));
 
-  const res = await fetch(`${API_URL}/pedidos`, {
+  await apiFetch<void>('/pedidos', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      idEmpresa,
-      idUsuario: userId,
+    mensagemErro: 'Erro ao criar pedido',
+    body: {
+      idEmpresa: Number(items[0].restaurant.id),
       vlSubtotal: subtotal,
       vlTaxaEntrega: deliveryFee,
       vlTotal: total,
       itens,
-    }),
+    },
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error((err as any).mensagem || 'Erro ao criar pedido');
-  }
 }
 
 export async function listarPedidosPorUsuario(userId: number): Promise<ApiOrder[]> {
-  const res = await fetch(`${API_URL}/pedidos/usuario/${userId}`);
-  if (!res.ok) throw new Error('Erro ao buscar pedidos');
-  const data = await res.json();
-  return data.map((p: any) => ({
+  const data = await apiFetch<any[]>(`/pedidos/usuario/${userId}`, {
+    mensagemErro: 'Erro ao buscar pedidos',
+  });
+  return data.map((p) => ({
     id: String(p.id_pedido),
     date: p.dt_pedido ?? '',
     restaurantName: p.nome_empresa ?? '',

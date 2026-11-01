@@ -1,6 +1,7 @@
+import { apiFetch } from './apiClient';
 import { Restaurant, Product } from '../types';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const PUBLICO = { autenticado: false } as const;
 
 export interface ApiCategory {
   id: string;
@@ -9,24 +10,21 @@ export interface ApiCategory {
 }
 
 export async function listarEmpresas(): Promise<Restaurant[]> {
-  const res = await fetch(`${API_URL}/empresas`);
-  if (!res.ok) throw new Error('Erro ao buscar restaurantes');
-  const data = await res.json();
+  const data = await apiFetch<any[]>('/empresas', { ...PUBLICO, mensagemErro: 'Erro ao buscar restaurantes' });
   return data.map(mapEmpresa);
 }
 
 export async function listarEmpresasPorCategoria(idCategoria: string): Promise<Restaurant[]> {
-  const res = await fetch(`${API_URL}/empresas/categoria/${idCategoria}`);
-  if (!res.ok) throw new Error('Erro ao buscar restaurantes por categoria');
-  const data = await res.json();
+  const data = await apiFetch<any[]>(`/empresas/categoria/${idCategoria}`, {
+    ...PUBLICO,
+    mensagemErro: 'Erro ao buscar restaurantes por categoria',
+  });
   return data.map(mapEmpresa);
 }
 
 export async function listarCategorias(): Promise<ApiCategory[]> {
-  const res = await fetch(`${API_URL}/categorias`);
-  if (!res.ok) throw new Error('Erro ao buscar categorias');
-  const data = await res.json();
-  return data.map((c: any) => ({
+  const data = await apiFetch<any[]>('/categorias', { ...PUBLICO, mensagemErro: 'Erro ao buscar categorias' });
+  return data.map((c) => ({
     id: String(c.id_categoria),
     name: c.nome ?? '',
     emoji: c.emoji ?? '',
@@ -34,13 +32,18 @@ export async function listarCategorias(): Promise<ApiCategory[]> {
 }
 
 export async function listarProdutosPorEmpresa(idEmpresa: string): Promise<Product[]> {
-  const res = await fetch(`${API_URL}/produtos/empresa/${idEmpresa}`);
-  if (!res.ok) throw new Error('Erro ao buscar produtos');
-  const data = await res.json();
+  const data = await apiFetch<any[]>(`/produtos/empresa/${idEmpresa}`, {
+    ...PUBLICO,
+    mensagemErro: 'Erro ao buscar produtos',
+  });
   return data.map(mapProduto);
 }
 
-function mapEmpresa(e: any): Restaurant {
+/**
+ * Traduz a linha de EMPRESA (snake_case, como vem do MySQL) para o modelo de
+ * domínio do app. Exportado porque favoritos devolvem as mesmas colunas.
+ */
+export function mapEmpresa(e: any): Restaurant {
   const parts = [e.endereco, e.numero ? `nº ${e.numero}` : null, e.bairro].filter(Boolean);
   return {
     id: String(e.id_empresa),
@@ -54,7 +57,7 @@ function mapEmpresa(e: any): Restaurant {
   };
 }
 
-function mapProduto(p: any): Product {
+export function mapProduto(p: any): Product {
   return {
     id: String(p.id_produto),
     name: p.nome ?? '',

@@ -146,7 +146,7 @@ export default function CartScreen() {
 
   const handleConfirm = async (_paymentMethod: string) => {
     if (!user) throw new Error('Usuário não autenticado.');
-    await criarPedido(items, user.id, subtotal, deliveryFee, total);
+    await criarPedido(items, subtotal, deliveryFee, total);
   };
 
   const handleCloseModal = () => setShowModal(false);
