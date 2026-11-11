@@ -3,7 +3,12 @@ import { useAuthStore } from '../store/authStore';
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  /**
+   * Alguns erros previstos carregam dado junto: o 409 do login traz os
+   * restaurantes para escolher, e o 409 do fechamento traz as rodadas ainda
+   * na cozinha. A tela precisa disso para montar a pergunta certa.
+   */
+  constructor(public status: number, message: string, public dados?: Record<string, any>) {
     super(message);
     this.name = 'ApiError';
   }
@@ -58,8 +63,8 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     if (res.status === 401 && autenticado) {
       useAuthStore.getState().clearAuth();
     }
-    const erro = await res.json().catch(() => ({}));
-    throw new ApiError(res.status, (erro as { mensagem?: string }).mensagem || mensagemErro);
+    const erro = (await res.json().catch(() => ({}))) as { mensagem?: string; dados?: Record<string, any> };
+    throw new ApiError(res.status, erro.mensagem || mensagemErro, erro.dados);
   }
 
   if (res.status === 204) return undefined as T;
