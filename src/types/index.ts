@@ -88,3 +88,109 @@ export interface ItemRascunho {
   quantidade: number;
   observacao?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Equipe (Fase 3)
+// ---------------------------------------------------------------------------
+
+export interface Funcionario {
+  idFuncionario: number;
+  idUsuario: number;
+  nome: string;
+  email: string;
+  telefone?: string;
+  papel: Papel;
+  /** Desligar é desativar: o histórico de vendas da pessoa é preservado. */
+  ativo: boolean;
+  dtAdmissao: string;
+}
+
+// ---------------------------------------------------------------------------
+// Caixa (Fase 4)
+// ---------------------------------------------------------------------------
+
+export interface MovimentoCaixa {
+  idMovimento: number;
+  /** 'venda' nasce do fechamento da comanda; os outros são manuais. */
+  tipo: 'venda' | 'venda_externa' | 'despesa' | 'sangria' | 'suprimento';
+  descricao: string;
+  valor: number;
+  numeroMesa?: string;
+  nomeFuncionario?: string;
+  dtMovimento: string;
+}
+
+export interface ResumoCaixa {
+  vlAbertura: number;
+  vendas: number;
+  vendasExternas: number;
+  suprimentos: number;
+  despesas: number;
+  sangrias: number;
+  movimentos: number;
+  /** Quanto deveria haver na gaveta. */
+  vlEsperado: number;
+  vlInformado: number | null;
+  /** Positivo = sobrou; negativo = faltou. null enquanto o caixa está aberto. */
+  vlDiferenca: number | null;
+}
+
+export interface Caixa {
+  idCaixa: number;
+  status: 'aberto' | 'fechado';
+  dtAbertura: string;
+  dtFechamento: string | null;
+  nomeAbertura?: string;
+  resumo: ResumoCaixa;
+  movimentos: MovimentoCaixa[];
+}
+
+// ---------------------------------------------------------------------------
+// Relatórios (Fase 4)
+// ---------------------------------------------------------------------------
+
+export interface PainelRelatorio {
+  periodo: { de: string; ate: string };
+  resumo: {
+    comandas: number;
+    faturamento: number;
+    ticketMedio: number;
+    rodadasCanceladas: number;
+  };
+  porDia: { dia: string; comandas: number; faturamento: number }[];
+  maisVendidos: { nome: string; quantidade: number; faturamento: number }[];
+  porHora: { hora: number; comandas: number; faturamento: number }[];
+  equipe: {
+    idFuncionario: number; nome: string; papel: Papel;
+    comandas: number; faturamento: number;
+  }[];
+}
+
+// ---------------------------------------------------------------------------
+// Estoque (Fase 5)
+// ---------------------------------------------------------------------------
+
+export interface Insumo {
+  idInsumo: number;
+  nome: string;
+  unidade: 'kg' | 'g' | 'l' | 'ml' | 'un';
+  qtdAtual: number;
+  qtdMinima: number;
+  vlCustoMedio: number;
+  /** Saldo no mínimo ou abaixo. */
+  repor: boolean;
+}
+
+export interface FichaTecnica {
+  idProduto: number;
+  nome: string;
+  valor: number;
+  itens: {
+    idInsumo: number; nome: string; unidade: string;
+    quantidade: number; vlCustoMedio: number; vlCusto: number;
+  }[];
+  vlCusto: number;
+  /** null quando não há ficha: sem receita o custo é desconhecido, não zero. */
+  vlMargem: number | null;
+  percMargem: number | null;
+}

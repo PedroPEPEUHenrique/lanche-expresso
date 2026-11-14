@@ -10,14 +10,22 @@ type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 // que se lê de relance, não a cor do ícone.
 function TabIcon({ name, focused }: { name: IoniconName; focused: boolean }) {
   return (
-    <View className={`items-center justify-center rounded-full px-4 py-1.5 ${
+    <View className={`items-center justify-center rounded-full px-3 py-1 ${
       focused ? 'bg-brand border border-ink' : 'bg-transparent'
     }`}>
-      <Ionicons name={name} size={22} color={focused ? theme.ink : theme.inkMuted} />
+      <Ionicons name={name} size={20} color={focused ? theme.ink : theme.inkMuted} />
     </View>
   );
 }
 
+/**
+ * Abas do gestor.
+ *
+ * Salão e Mesas saíram da barra para caber Financeiro, Equipe e Estoque sem
+ * espremer cinco rótulos numa tela de celular. O salão continua a um toque,
+ * pelo cabeçalho do cardápio, e Mesas é cadastro — mexe-se nele uma vez na
+ * montagem do restaurante, não todo dia.
+ */
 export default function GestorLayout() {
   return (
     <Tabs
@@ -26,7 +34,7 @@ export default function GestorLayout() {
         tabBarShowLabel: true,
         tabBarActiveTintColor: theme.ink,
         tabBarInactiveTintColor: theme.inkMuted,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
         tabBarStyle: {
           backgroundColor: theme.white,
           borderTopColor: theme.ink,
@@ -45,17 +53,24 @@ export default function GestorLayout() {
         }}
       />
       <Tabs.Screen
-        name="mesas"
+        name="financeiro"
         options={{
-          title: 'Mesas',
-          tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'grid' : 'grid-outline'} focused={focused} />,
+          title: 'Financeiro',
+          tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'cash' : 'cash-outline'} focused={focused} />,
         }}
       />
       <Tabs.Screen
-        name="salao"
+        name="equipe"
         options={{
-          title: 'Salão',
+          title: 'Equipe',
           tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'people' : 'people-outline'} focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="estoque"
+        options={{
+          title: 'Estoque',
+          tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'cube' : 'cube-outline'} focused={focused} />,
         }}
       />
       <Tabs.Screen
@@ -65,6 +80,10 @@ export default function GestorLayout() {
           tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} />,
         }}
       />
+
+      {/* Fora da barra: alcançadas pelo cabeçalho do cardápio. */}
+      <Tabs.Screen name="salao" options={{ href: null }} />
+      <Tabs.Screen name="mesas" options={{ href: null }} />
     </Tabs>
   );
 }

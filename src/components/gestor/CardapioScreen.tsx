@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import {
   listarCardapioCompleto, alternarDisponibilidade, criarProduto, atualizarProduto,
   removerProduto, criarCategoria, removerCategoria,
@@ -166,12 +166,26 @@ export default function CardapioScreen() {
             <Text className="text-sm font-semibold text-ink mt-0.5">{emFalta} item(ns) em falta hoje</Text>
           )}
         </View>
-        <TouchableOpacity
-          className="px-3 py-2 rounded-full border border-ink bg-brand"
-          onPress={() => setNovaCategoria('')}
-        >
-          <Text className="text-xs font-bold text-ink">+ Categoria</Text>
-        </TouchableOpacity>
+        <View className="flex-row items-center gap-x-2">
+          <TouchableOpacity
+            className="p-2 rounded-full border border-ink"
+            onPress={() => router.push('/(gestor)/salao')}
+          >
+            <Ionicons name="people-outline" size={18} color={theme.ink} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="p-2 rounded-full border border-ink"
+            onPress={() => router.push('/(gestor)/mesas')}
+          >
+            <Ionicons name="grid-outline" size={18} color={theme.ink} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="px-3 py-2 rounded-full border border-ink bg-brand"
+            onPress={() => setNovaCategoria('')}
+          >
+            <Text className="text-xs font-bold text-ink">+ Categoria</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <SectionList
