@@ -70,11 +70,19 @@ export default function MapaMesasScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <View className="px-5 pt-2 pb-4 border-b border-ink">
-        <Text className="text-2xl font-extrabold text-ink">Salão</Text>
-        <Text className="text-sm text-ink-soft mt-0.5">
-          {empresa?.nome} · {user?.nome}
-        </Text>
+      <View className="px-5 pt-2 pb-4 border-b border-ink flex-row items-center justify-between">
+        <View className="flex-1">
+          <Text className="text-2xl font-extrabold text-ink">Salão</Text>
+          <Text className="text-sm text-ink-soft mt-0.5" numberOfLines={1}>
+            {empresa?.nome} · {user?.nome}
+          </Text>
+        </View>
+        <TouchableOpacity
+          className="p-2 rounded-full border border-ink ml-3"
+          onPress={() => router.push('/conta')}
+        >
+          <Ionicons name="person-outline" size={20} color={theme.ink} />
+        </TouchableOpacity>
       </View>
 
       {pendentes.length > 0 && (

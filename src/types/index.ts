@@ -11,7 +11,15 @@ export interface Produto {
   descricao: string;
   valor: number;
   icone?: string;
+  /** Está no cardápio. Decisão de cardápio, rara. */
   ativo: boolean;
+  /** Tem hoje. "Acabou o filé", um toque, toda noite. */
+  disponivel: boolean;
+}
+
+/** Uma categoria com seus produtos, como a tela do gestor consome. */
+export interface SecaoCardapio extends ProdutoCategoria {
+  produtos: Produto[];
 }
 
 export interface ProdutoCategoria {

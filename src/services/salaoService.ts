@@ -94,6 +94,10 @@ export async function listarCardapio(idEmpresa: number): Promise<{ categorias: P
       valor: Number(p.valor),
       icone: p.icone ?? undefined,
       ativo: !!p.ativo,
+      // Esta rota só devolve o que está no cardápio E tem hoje — a API filtra
+      // pelos dois estados. O campo vem junto para o tipo ser o mesmo que a
+      // tela do gestor usa.
+      disponivel: p.disponivel === undefined ? true : !!p.disponivel,
     })),
   };
 }

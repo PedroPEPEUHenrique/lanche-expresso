@@ -8,12 +8,12 @@ import { reprocessarFila } from '../services/envioRodadas';
 import { theme } from '../style/theme';
 
 /** Grupos de rota que cada papel pode abrir. */
-const GRUPOS = ['(garcom)', '(cozinha)', '(gestor)', 'comanda'] as const;
+const GRUPOS = ['(garcom)', '(cozinha)', '(gestor)', 'comanda', 'conta'] as const;
 
 const PERMITIDO: Record<string, string[]> = {
-  gestor: ['(gestor)', '(garcom)', '(cozinha)', 'comanda'],
-  garcom: ['(garcom)', 'comanda'],
-  cozinha: ['(cozinha)'],
+  gestor: ['(gestor)', '(garcom)', '(cozinha)', 'comanda', 'conta'],
+  garcom: ['(garcom)', 'comanda', 'conta'],
+  cozinha: ['(cozinha)', 'conta'],
 };
 
 /**
@@ -92,8 +92,10 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="(garcom)" />
         <Stack.Screen name="(cozinha)" />
+        <Stack.Screen name="(gestor)" />
         <Stack.Screen name="comanda/[id]/index" />
         <Stack.Screen name="comanda/[id]/novo-pedido" />
+        <Stack.Screen name="conta" />
       </Stack>
     </>
   );

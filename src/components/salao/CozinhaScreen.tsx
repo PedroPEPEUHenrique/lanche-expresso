@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { listarFilaCozinha, avancarStatus } from '../../services/salaoService';
 import { useAuthStore } from '../../store/authStore';
 import { Rodada, StatusRodada } from '../../types';
@@ -77,9 +78,14 @@ export default function CozinhaScreen() {
             {fila.length} pedido(s) na fila · {empresa?.nome}
           </Text>
         </View>
-        <TouchableOpacity onPress={carregar} className="p-2 rounded-full border border-ink">
-          <Ionicons name="refresh" size={20} color={theme.ink} />
-        </TouchableOpacity>
+        <View className="flex-row gap-x-2">
+          <TouchableOpacity onPress={carregar} className="p-2 rounded-full border border-ink">
+            <Ionicons name="refresh" size={20} color={theme.ink} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/conta')} className="p-2 rounded-full border border-ink">
+            <Ionicons name="person-outline" size={20} color={theme.ink} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {erro && (
