@@ -1,24 +1,24 @@
 import React, { useCallback, useState } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity, ActivityIndicator,
-  RefreshControl, Alert, Modal, TextInput, KeyboardAvoidingView, Platform,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { listarSalao } from '../../services/salaoService';
 import { criarMesa, atualizarMesa, removerMesa } from '../../services/mesaService';
 import { Mesa } from '../../types';
 import { theme } from '../../style/theme';
+import { Botao, BotaoVazado, Colchetes, Fundo, Numero, Regua, Rotulo, Selo, Vazio } from '../cyber';
+import { Campo } from '../cyber/Campo';
+import { ModalBase } from './CardapioScreen';
 
 type Rascunho = { idMesa?: number; numero: string; setor: string; capacidade: string };
 
 /**
  * Cadastro das mesas do salão.
  *
- * É a primeira coisa que um restaurante novo precisa: sem mesa não há comanda,
- * e sem comanda o app não serve para nada. A tela mostra o estado atual junto
- * do cadastro porque mesa ocupada não pode ser removida.
+ * É a primeira coisa que um restaurante novo precisa: sem mesa não há
+ * comanda, e sem comanda o app não serve para nada. A tela mostra o estado
+ * atual junto do cadastro porque mesa ocupada não pode ser removida.
  */
 export default function MesasScreen() {
   const [mesas, setMesas] = useState<Mesa[]>([]);
@@ -41,7 +41,7 @@ export default function MesasScreen() {
   useFocusEffect(useCallback(() => { carregar(); }, [carregar]));
 
   const salvar = async () => {
-    if (!editando?.numero.trim()) return Alert.alert('Atenção', 'A mesa precisa de um número.');
+    if (!editando?.numero.trim()) return Alert.alert('Dados incompletos', 'A mesa precisa de um número.');
     setSalvando(true);
     try {
       const dados = {
@@ -55,9 +55,7 @@ export default function MesasScreen() {
       await carregar();
     } catch (e: any) {
       Alert.alert('Erro ao salvar', e.message ?? 'Tente novamente.');
-    } finally {
-      setSalvando(false);
-    }
+    } finally { setSalvando(false); }
   };
 
   const remover = (mesa: Mesa) => {
@@ -77,126 +75,114 @@ export default function MesasScreen() {
 
   if (carregando) {
     return (
-      <SafeAreaView className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator size="large" color={theme.ink} />
-      </SafeAreaView>
+      <Fundo><View className="flex-1 items-center justify-center"><ActivityIndicator size="large" color={theme.neon} /></View></Fundo>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <View className="px-5 pt-2 pb-4 border-b border-ink flex-row items-center justify-between">
-        <View>
-          <Text className="text-2xl font-extrabold text-ink">Mesas</Text>
-          <Text className="text-sm text-ink-soft mt-0.5">
-            {mesas.length} no salão · {mesas.filter((m) => m.ocupada).length} ocupada(s)
-          </Text>
-        </View>
-        <TouchableOpacity
-          className="px-3 py-2 rounded-full border border-ink bg-brand"
-          onPress={() => setEditando({ numero: '', setor: '', capacidade: '' })}
-        >
-          <Text className="text-xs font-bold text-ink">+ Mesa</Text>
-        </TouchableOpacity>
-      </View>
-
-      <FlatList
-        data={mesas}
-        keyExtractor={(m) => String(m.idMesa)}
-        contentContainerStyle={{ paddingBottom: 40 }}
-        refreshControl={
-          <RefreshControl refreshing={atualizando} onRefresh={() => { setAtualizando(true); carregar(); }} tintColor={theme.ink} />
-        }
-        ListEmptyComponent={
-          <View className="items-center mt-24 px-10">
-            <Ionicons name="grid-outline" size={48} color={theme.inkMuted} />
-            <Text className="text-ink-soft text-center mt-3">
-              Nenhuma mesa ainda. Crie as mesas para o garçom poder abrir comandas.
-            </Text>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <View className="flex-row items-center px-5 py-3 border-b border-ink">
-            <View className={`w-12 h-12 rounded-xl border-2 border-ink items-center justify-center mr-3 ${item.ocupada ? 'bg-brand' : 'bg-white'}`}>
-              <Text className="text-lg font-extrabold text-ink">{item.numero}</Text>
+    <Fundo>
+      <SafeAreaView className="flex-1" edges={['top']}>
+        <View style={{ backgroundColor: theme.void, borderBottomWidth: 1, borderBottomColor: theme.line }}>
+          <Regua cor="cyan" />
+          <View className="px-4 pt-3 pb-3 flex-row items-center">
+            <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
+              <Ionicons name="arrow-back" size={24} color={theme.cyan} />
+            </TouchableOpacity>
+            <View className="flex-1">
+              <Text style={{ fontFamily: theme.mono, fontSize: 22, fontWeight: '700', color: theme.text, letterSpacing: 2 }}>
+                MESAS
+              </Text>
+              <Rotulo cor="muted" tamanho={9}>
+                {mesas.length} no salão · {mesas.filter((m) => m.ocupada).length} ocupada(s)
+              </Rotulo>
             </View>
             <TouchableOpacity
-              className="flex-1"
-              activeOpacity={0.7}
-              onPress={() => setEditando({
-                idMesa: item.idMesa, numero: item.numero,
-                setor: item.setor ?? '', capacidade: item.capacidade ? String(item.capacidade) : '',
-              })}
+              className="px-3 items-center justify-center"
+              style={{ height: 40, backgroundColor: theme.neon }}
+              onPress={() => setEditando({ numero: '', setor: '', capacidade: '' })}
             >
-              <Text className="text-base font-semibold text-ink">
-                {item.setor || 'Sem setor'}
+              <Text style={{ fontFamily: theme.mono, fontSize: 10, fontWeight: '700', letterSpacing: 1, color: theme.void }}>
+                + MESA
               </Text>
-              <Text className="text-sm text-ink-soft mt-0.5">
-                {item.capacidade ? `${item.capacidade} lugares` : 'Capacidade não definida'}
-                {item.ocupada ? ' · ocupada' : ''}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => remover(item)} className="p-2">
-              <Ionicons name="trash-outline" size={20} color={theme.inkMuted} />
+              <Colchetes cor="neon" tamanho={7} espessura={2} />
             </TouchableOpacity>
           </View>
-        )}
-      />
+        </View>
 
-      <Modal visible={!!editando} transparent animationType="slide" onRequestClose={() => setEditando(null)}>
-        <KeyboardAvoidingView
-          className="flex-1 justify-end"
-          style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-          <View className="bg-white rounded-t-3xl border-t-2 border-ink p-5 pb-8">
-            <Text className="text-lg font-extrabold text-ink mb-4">
-              {editando?.idMesa ? `Mesa ${editando.numero}` : 'Nova mesa'}
-            </Text>
-            <Campo rotulo="Número" valor={editando?.numero ?? ''} placeholder="12"
-              aoMudar={(v: string) => editando && setEditando({ ...editando, numero: v })} />
-            <Campo rotulo="Setor" valor={editando?.setor ?? ''} placeholder="Salão, Varanda..."
-              aoMudar={(v: string) => editando && setEditando({ ...editando, setor: v })} />
-            <Campo rotulo="Capacidade" valor={editando?.capacidade ?? ''} placeholder="4" tipoTeclado="number-pad"
-              aoMudar={(v: string) => editando && setEditando({ ...editando, capacidade: v })} />
+        <FlatList
+          data={mesas}
+          keyExtractor={(m) => String(m.idMesa)}
+          contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 40 }}
+          refreshControl={
+            <RefreshControl refreshing={atualizando} onRefresh={() => { setAtualizando(true); carregar(); }}
+              tintColor={theme.neon} colors={[theme.neon]} progressBackgroundColor={theme.surface} />
+          }
+          ListEmptyComponent={
+            <Vazio icone="grid-outline" titulo="Salão sem mesas"
+              texto="Crie as mesas para o garçom poder abrir comandas." />
+          }
+          renderItem={({ item }) => (
+            <View
+              className="flex-row items-center px-3 py-3"
+              style={{ borderWidth: 1, borderColor: item.ocupada ? theme.neon : theme.line, backgroundColor: theme.surface }}
+            >
+              <View
+                className="items-center justify-center mr-3"
+                style={{
+                  width: 48, height: 48, borderWidth: 1,
+                  borderColor: item.ocupada ? theme.neon : theme.line,
+                  backgroundColor: item.ocupada ? theme.raised : 'transparent',
+                }}
+              >
+                <Numero cor={item.ocupada ? 'neon' : 'muted'} tamanho={20}>{item.numero}</Numero>
+              </View>
 
-            <View className="flex-row gap-x-3 mt-2">
               <TouchableOpacity
-                className="flex-1 border-2 border-ink rounded-2xl h-12 items-center justify-center bg-white"
-                onPress={() => setEditando(null)}
+                className="flex-1"
+                activeOpacity={0.7}
+                onPress={() => setEditando({
+                  idMesa: item.idMesa, numero: item.numero,
+                  setor: item.setor ?? '', capacidade: item.capacidade ? String(item.capacidade) : '',
+                })}
               >
-                <Text className="text-base font-bold text-ink">Cancelar</Text>
+                <Text style={{ fontFamily: theme.mono, fontSize: 13, fontWeight: '700', letterSpacing: 0.5, color: theme.text }}>
+                  {(item.setor || 'SEM SETOR').toUpperCase()}
+                </Text>
+                <View className="flex-row items-center gap-x-2 mt-1.5">
+                  <Rotulo cor="muted" tamanho={9}>
+                    {item.capacidade ? `${item.capacidade} lugares` : 'cap. indefinida'}
+                  </Rotulo>
+                  {item.ocupada && <Selo cor="neon">ocupada</Selo>}
+                </View>
               </TouchableOpacity>
-              <TouchableOpacity
-                className="flex-1 bg-brand border-2 border-ink rounded-2xl h-12 items-center justify-center"
-                onPress={salvar} disabled={salvando}
-              >
-                {salvando ? <ActivityIndicator color={theme.ink} /> : (
-                  <Text className="text-base font-bold text-ink">Salvar</Text>
-                )}
+
+              <TouchableOpacity onPress={() => remover(item)} className="p-2">
+                <Ionicons name="trash-outline" size={18} color={theme.muted} />
               </TouchableOpacity>
+
+              <Colchetes cor={item.ocupada ? 'neon' : 'muted'} tamanho={9} espessura={1} />
             </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-    </SafeAreaView>
-  );
-}
-
-function Campo({ rotulo, valor, aoMudar, placeholder, tipoTeclado }: any) {
-  const [focado, setFocado] = useState(false);
-  return (
-    <View className="mb-3">
-      <Text className="text-sm font-semibold text-ink-soft mb-1.5">{rotulo}</Text>
-      <View className={`border-[1.5px] rounded-xl px-3 ${focado ? 'border-ink bg-brand-light' : 'border-ink bg-white'}`}>
-        <TextInput
-          className="text-ink text-base h-12"
-          value={valor} onChangeText={aoMudar}
-          onFocus={() => setFocado(true)} onBlur={() => setFocado(false)}
-          placeholder={placeholder} placeholderTextColor={theme.inkMuted}
-          keyboardType={tipoTeclado}
+          )}
         />
-      </View>
-    </View>
+
+        <ModalBase visivel={!!editando} aoFechar={() => setEditando(null)}>
+          <Text style={{ fontFamily: theme.mono, fontSize: 16, fontWeight: '700', letterSpacing: 2, color: theme.text }}>
+            {editando?.idMesa ? `MESA ${editando.numero}` : 'NOVA MESA'}
+          </Text>
+          <View className="gap-y-3 mt-4">
+            <Campo rotulo="Número" valor={editando?.numero ?? ''} placeholder="12"
+              aoMudar={(v) => editando && setEditando({ ...editando, numero: v })} />
+            <Campo rotulo="Setor" valor={editando?.setor ?? ''} placeholder="Salão, Varanda..."
+              aoMudar={(v) => editando && setEditando({ ...editando, setor: v })} />
+            <Campo rotulo="Capacidade" valor={editando?.capacidade ?? ''} placeholder="4" tipoTeclado="number-pad"
+              aoMudar={(v) => editando && setEditando({ ...editando, capacidade: v })} />
+          </View>
+          <View className="flex-row gap-x-3 mt-5">
+            <View className="flex-1"><BotaoVazado cor="muted" onPress={() => setEditando(null)}>Cancelar</BotaoVazado></View>
+            <View className="flex-1"><Botao onPress={salvar} carregando={salvando}>Salvar</Botao></View>
+          </View>
+        </ModalBase>
+      </SafeAreaView>
+    </Fundo>
   );
 }

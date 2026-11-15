@@ -1,26 +1,28 @@
 import React, { useCallback, useState } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity, ActivityIndicator,
-  RefreshControl, Alert, Modal, TextInput, KeyboardAvoidingView, Platform, ScrollView,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { listarInsumos, criarInsumo, movimentarInsumo } from '../../services/gestaoService';
 import { Insumo } from '../../types';
 import { theme } from '../../style/theme';
+import { Botao, BotaoVazado, Cabecalho, Colchetes, Fundo, Halo, Numero, Rotulo, Selo, Vazio } from '../cyber';
+import { Campo } from '../cyber/Campo';
+import { ModalBase } from './CardapioScreen';
 
 const UNIDADES: Insumo['unidade'][] = ['kg', 'g', 'l', 'ml', 'un'];
 
-type Movimento = { insumo: Insumo; tipo: 'entrada' | 'perda' | 'ajuste'; quantidade: string; vlUnitario: string; motivo: string };
+type Movimento = {
+  insumo: Insumo; tipo: 'entrada' | 'perda' | 'ajuste';
+  quantidade: string; vlUnitario: string; motivo: string;
+};
 
 /**
  * Estoque de insumos.
  *
- * O que está no mínimo ou abaixo sobe para o topo e vem marcado — é a razão
- * de o gestor abrir esta tela. Saldo negativo não é escondido: significa que
- * a contagem está errada ou que falta ficha técnica, e as duas coisas pedem
- * ação.
+ * O que está no mínimo ou abaixo sobe para o topo e acende em magenta — é a
+ * razão de o gestor abrir esta tela. Saldo negativo aparece em vermelho e não
+ * é escondido: significa contagem errada ou ficha técnica faltando, e as duas
+ * coisas pedem ação.
  */
 export default function EstoqueScreen() {
   const [insumos, setInsumos] = useState<Insumo[]>([]);
@@ -44,7 +46,7 @@ export default function EstoqueScreen() {
   useFocusEffect(useCallback(() => { carregar(); }, [carregar]));
 
   const salvarInsumo = async () => {
-    if (!novo?.nome.trim()) return Alert.alert('Atenção', 'Informe o nome do insumo.');
+    if (!novo?.nome.trim()) return Alert.alert('Dados incompletos', 'Informe o nome do insumo.');
     setOcupado(true);
     try {
       await criarInsumo({
@@ -61,12 +63,11 @@ export default function EstoqueScreen() {
   const salvarMovimento = async () => {
     if (!movimento) return;
     const qtd = Number(movimento.quantidade.replace(',', '.'));
-    if (!Number.isFinite(qtd) || qtd <= 0) return Alert.alert('Atenção', 'Informe uma quantidade maior que zero.');
+    if (!Number.isFinite(qtd) || qtd <= 0) return Alert.alert('Dados inválidos', 'Informe uma quantidade maior que zero.');
     const custo = Number(movimento.vlUnitario.replace(',', '.'));
     if (movimento.tipo === 'entrada' && !(custo > 0)) {
-      return Alert.alert('Atenção', 'Informe o custo unitário da compra.');
+      return Alert.alert('Dados incompletos', 'Informe o custo unitário da compra.');
     }
-
     setOcupado(true);
     try {
       await movimentarInsumo(movimento.insumo.idInsumo, {
@@ -82,192 +83,166 @@ export default function EstoqueScreen() {
   };
 
   const escolherMovimento = (insumo: Insumo) => {
-    Alert.alert(insumo.nome, 'O que aconteceu com este insumo?', [
-      { text: 'Entrou (compra)', onPress: () => setMovimento({ insumo, tipo: 'entrada', quantidade: '', vlUnitario: '', motivo: '' }) },
+    Alert.alert(insumo.nome, 'Qual movimento registrar?', [
+      { text: 'Entrada (compra)', onPress: () => setMovimento({ insumo, tipo: 'entrada', quantidade: '', vlUnitario: '', motivo: '' }) },
       { text: 'Perda', onPress: () => setMovimento({ insumo, tipo: 'perda', quantidade: '', vlUnitario: '', motivo: '' }) },
-      { text: 'Contei e está diferente', onPress: () => setMovimento({ insumo, tipo: 'ajuste', quantidade: '', vlUnitario: '', motivo: '' }) },
+      { text: 'Contagem física', onPress: () => setMovimento({ insumo, tipo: 'ajuste', quantidade: '', vlUnitario: '', motivo: '' }) },
       { text: 'Cancelar', style: 'cancel' },
     ]);
   };
 
   if (carregando) {
     return (
-      <SafeAreaView className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator size="large" color={theme.ink} />
-      </SafeAreaView>
+      <Fundo><View className="flex-1 items-center justify-center"><ActivityIndicator size="large" color={theme.neon} /></View></Fundo>
     );
   }
 
   const repor = insumos.filter((i) => i.repor).length;
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <View className="px-5 pt-2 pb-4 border-b border-ink flex-row items-center justify-between">
-        <View>
-          <Text className="text-2xl font-extrabold text-ink">Estoque</Text>
-          <Text className="text-sm text-ink-soft mt-0.5">
-            {repor > 0 ? `${repor} insumo(s) para repor` : `${insumos.length} insumo(s)`}
-          </Text>
-        </View>
-        <TouchableOpacity
-          className="px-3 py-2 rounded-full border border-ink bg-brand"
-          onPress={() => setNovo({ nome: '', unidade: 'kg', qtdMinima: '' })}
-        >
-          <Text className="text-xs font-bold text-ink">+ Insumo</Text>
-        </TouchableOpacity>
-      </View>
-
-      <FlatList
-        data={insumos}
-        keyExtractor={(i) => String(i.idInsumo)}
-        contentContainerStyle={{ paddingBottom: 40 }}
-        refreshControl={
-          <RefreshControl refreshing={atualizando} onRefresh={() => { setAtualizando(true); carregar(); }} tintColor={theme.ink} />
-        }
-        ListEmptyComponent={
-          <View className="items-center mt-24 px-10">
-            <Ionicons name="cube-outline" size={48} color={theme.inkMuted} />
-            <Text className="text-ink-soft text-center mt-3">
-              Nenhum insumo cadastrado. O estoque só baixa sozinho depois que os
-              produtos tiverem ficha técnica.
-            </Text>
-          </View>
-        }
-        renderItem={({ item }) => {
-          const negativo = item.qtdAtual < 0;
-          return (
+    <Fundo>
+      <SafeAreaView className="flex-1" edges={['top']}>
+        <Cabecalho
+          titulo="Estoque"
+          sub={repor > 0 ? `${repor} insumo(s) para repor` : `${insumos.length} insumo(s) em linha`}
+          direita={
             <TouchableOpacity
-              className={`flex-row items-center px-5 py-3 border-b border-ink ${item.repor ? 'bg-brand-light' : 'bg-white'}`}
-              onPress={() => escolherMovimento(item)}
-              activeOpacity={0.7}
+              className="px-3 items-center justify-center"
+              style={{ height: 40, backgroundColor: theme.neon }}
+              onPress={() => setNovo({ nome: '', unidade: 'kg', qtdMinima: '' })}
             >
-              <View className="flex-1 pr-3">
-                <View className="flex-row items-center gap-x-2">
-                  <Text className="text-base font-semibold text-ink">{item.nome}</Text>
-                  {item.repor && (
-                    <View className="px-2 py-0.5 rounded-full border-2 border-ink bg-brand">
-                      <Text className="text-[10px] font-bold text-ink">REPOR</Text>
-                    </View>
-                  )}
-                </View>
-                <Text className="text-xs text-ink-soft mt-0.5">
-                  Mínimo {item.qtdMinima} {item.unidade} · R$ {item.vlCustoMedio.toFixed(2)}/{item.unidade}
-                </Text>
-              </View>
-              <View className="items-end">
-                <Text className={`text-lg font-extrabold ${negativo ? 'text-danger' : 'text-ink'}`}>
-                  {item.qtdAtual}
-                </Text>
-                <Text className="text-[11px] text-ink-soft">{item.unidade}</Text>
-              </View>
+              <Text style={{ fontFamily: theme.mono, fontSize: 10, fontWeight: '700', letterSpacing: 1, color: theme.void }}>
+                + INSUMO
+              </Text>
+              <Colchetes cor="neon" tamanho={7} espessura={2} />
             </TouchableOpacity>
-          );
-        }}
-      />
+          }
+        />
 
-      {/* Novo insumo */}
-      <Modal visible={!!novo} transparent animationType="slide" onRequestClose={() => setNovo(null)}>
-        <KeyboardAvoidingView className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View className="bg-white rounded-t-3xl border-t-2 border-ink p-5 pb-8">
-            <ScrollView keyboardShouldPersistTaps="handled">
-              <Text className="text-lg font-extrabold text-ink mb-4">Novo insumo</Text>
-              <Campo rotulo="Nome" valor={novo?.nome ?? ''} placeholder="Carne bovina"
-                aoMudar={(v: string) => novo && setNovo({ ...novo, nome: v })} />
+        <FlatList
+          data={insumos}
+          keyExtractor={(i) => String(i.idInsumo)}
+          contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 40 }}
+          refreshControl={
+            <RefreshControl refreshing={atualizando} onRefresh={() => { setAtualizando(true); carregar(); }}
+              tintColor={theme.neon} colors={[theme.neon]} progressBackgroundColor={theme.surface} />
+          }
+          ListEmptyComponent={
+            <Vazio icone="cube-outline" titulo="Estoque vazio"
+              texto="O estoque só baixa sozinho depois que os produtos tiverem ficha técnica." />
+          }
+          renderItem={({ item }) => {
+            const negativo = item.qtdAtual < 0;
+            const cor = negativo ? 'danger' : item.repor ? 'magenta' : 'muted';
+            const corSolida = negativo ? theme.danger : item.repor ? theme.magenta : theme.line;
 
-              <Text className="text-sm font-semibold text-ink-soft mb-1.5">Unidade</Text>
-              <View className="flex-row flex-wrap gap-2 mb-3">
-                {UNIDADES.map((u) => (
-                  <TouchableOpacity
-                    key={u}
-                    className={`px-4 py-2 rounded-full border-2 border-ink ${novo?.unidade === u ? 'bg-brand' : 'bg-white'}`}
-                    onPress={() => novo && setNovo({ ...novo, unidade: u })}
-                  >
-                    <Text className="text-xs font-bold text-ink">{u}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+            const corpo = (
+              <TouchableOpacity
+                className="flex-row items-center px-4 py-3"
+                style={{ borderWidth: 1, borderColor: corSolida, backgroundColor: item.repor ? theme.raised : theme.surface }}
+                onPress={() => escolherMovimento(item)}
+                activeOpacity={0.75}
+              >
+                <View className="flex-1 pr-3">
+                  <View className="flex-row items-center gap-x-2">
+                    <Text style={{ fontFamily: theme.mono, fontSize: 13, fontWeight: '700', letterSpacing: 0.5, color: theme.text }}>
+                      {item.nome.toUpperCase()}
+                    </Text>
+                    {item.repor && <Selo cor="magenta" solido>repor</Selo>}
+                  </View>
+                  <Text style={{ fontFamily: theme.mono, fontSize: 10, color: theme.muted, marginTop: 3 }}>
+                    MIN {item.qtdMinima}{item.unidade} · R$ {item.vlCustoMedio.toFixed(2)}/{item.unidade}
+                  </Text>
+                </View>
+                <View className="items-end">
+                  <Numero cor={negativo ? 'danger' : item.repor ? 'magenta' : 'neon'} tamanho={22}>
+                    {item.qtdAtual}
+                  </Numero>
+                  <Rotulo cor="muted" tamanho={9}>{item.unidade}</Rotulo>
+                </View>
+                <Colchetes cor={cor} tamanho={9} espessura={1} />
+              </TouchableOpacity>
+            );
 
-              <Campo rotulo="Avisar quando ficar abaixo de" valor={novo?.qtdMinima ?? ''} placeholder="0 desliga o aviso"
-                tipoTeclado="decimal-pad"
-                aoMudar={(v: string) => novo && setNovo({ ...novo, qtdMinima: v })} />
+            return item.repor ? <Halo cor="magenta" intensidade={0.7}>{corpo}</Halo> : corpo;
+          }}
+        />
 
-              <View className="flex-row gap-x-3 mt-2">
-                <TouchableOpacity className="flex-1 border-2 border-ink rounded-2xl h-12 items-center justify-center bg-white"
-                  onPress={() => setNovo(null)}>
-                  <Text className="text-base font-bold text-ink">Cancelar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity className="flex-1 bg-brand border-2 border-ink rounded-2xl h-12 items-center justify-center"
-                  onPress={salvarInsumo} disabled={ocupado}>
-                  {ocupado ? <ActivityIndicator color={theme.ink} /> : (
-                    <Text className="text-base font-bold text-ink">Criar</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
+        {/* Novo insumo */}
+        <ModalBase visivel={!!novo} aoFechar={() => setNovo(null)}>
+          <Text style={estilos.titulo}>NOVO INSUMO</Text>
+          <View className="gap-y-3 mt-4">
+            <Campo rotulo="Nome" valor={novo?.nome ?? ''} placeholder="Carne bovina"
+              aoMudar={(v) => novo && setNovo({ ...novo, nome: v })} />
           </View>
-        </KeyboardAvoidingView>
-      </Modal>
 
-      {/* Movimento */}
-      <Modal visible={!!movimento} transparent animationType="slide" onRequestClose={() => setMovimento(null)}>
-        <KeyboardAvoidingView className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View className="bg-white rounded-t-3xl border-t-2 border-ink p-5 pb-8">
-            <Text className="text-lg font-extrabold text-ink">{movimento?.insumo.nome}</Text>
-            <Text className="text-sm text-ink-soft mb-4">
-              {movimento?.tipo === 'entrada' ? 'Entrada por compra'
-                : movimento?.tipo === 'perda' ? 'Baixa por perda'
-                : `Contagem física — informe o total que existe hoje (sistema: ${movimento?.insumo.qtdAtual})`}
-            </Text>
+          <View className="mt-3 mb-1"><Rotulo cor="muted">unidade</Rotulo></View>
+          <View className="flex-row flex-wrap gap-2 mb-3">
+            {UNIDADES.map((u) => {
+              const ativa = novo?.unidade === u;
+              return (
+                <TouchableOpacity
+                  key={u}
+                  className="px-4 py-2"
+                  style={{ borderWidth: 1, borderColor: ativa ? theme.neon : theme.line, backgroundColor: ativa ? theme.neon : theme.surface }}
+                  onPress={() => novo && setNovo({ ...novo, unidade: u })}
+                >
+                  <Text style={{ fontFamily: theme.mono, fontSize: 11, fontWeight: '700', color: ativa ? theme.void : theme.muted }}>
+                    {u.toUpperCase()}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
 
+          <Campo rotulo="Avisar abaixo de" valor={novo?.qtdMinima ?? ''} placeholder="0 desliga o aviso"
+            tipoTeclado="decimal-pad" aoMudar={(v) => novo && setNovo({ ...novo, qtdMinima: v })} />
+
+          <View className="flex-row gap-x-3 mt-5">
+            <View className="flex-1"><BotaoVazado cor="muted" onPress={() => setNovo(null)}>Cancelar</BotaoVazado></View>
+            <View className="flex-1"><Botao onPress={salvarInsumo} carregando={ocupado}>Criar</Botao></View>
+          </View>
+        </ModalBase>
+
+        {/* Movimento */}
+        <ModalBase visivel={!!movimento} aoFechar={() => setMovimento(null)}>
+          <Text style={estilos.titulo}>{movimento?.insumo.nome.toUpperCase()}</Text>
+          <View className="mt-1 mb-4">
+            <Rotulo cor={movimento?.tipo === 'entrada' ? 'cyan' : movimento?.tipo === 'perda' ? 'danger' : 'magenta'}>
+              {movimento?.tipo === 'entrada' ? 'entrada por compra'
+                : movimento?.tipo === 'perda' ? 'baixa por perda'
+                : `contagem física · sistema: ${movimento?.insumo.qtdAtual}${movimento?.insumo.unidade}`}
+            </Rotulo>
+          </View>
+
+          <View className="gap-y-3">
             <Campo
-              rotulo={movimento?.tipo === 'ajuste' ? `Quantidade contada (${movimento?.insumo.unidade})` : `Quantidade (${movimento?.insumo.unidade})`}
+              rotulo={movimento?.tipo === 'ajuste'
+                ? `Total contado (${movimento?.insumo.unidade})`
+                : `Quantidade (${movimento?.insumo.unidade})`}
               valor={movimento?.quantidade ?? ''} placeholder="0" tipoTeclado="decimal-pad"
-              aoMudar={(v: string) => movimento && setMovimento({ ...movimento, quantidade: v })} />
+              aoMudar={(v) => movimento && setMovimento({ ...movimento, quantidade: v })} />
 
             {movimento?.tipo === 'entrada' && (
               <Campo rotulo={`Custo por ${movimento.insumo.unidade} (R$)`} valor={movimento.vlUnitario}
                 placeholder="30,00" tipoTeclado="decimal-pad"
-                aoMudar={(v: string) => setMovimento({ ...movimento, vlUnitario: v })} />
+                aoMudar={(v) => setMovimento({ ...movimento, vlUnitario: v })} />
             )}
 
-            <Campo rotulo="Motivo" valor={movimento?.motivo ?? ''} placeholder="Opcional"
-              aoMudar={(v: string) => movimento && setMovimento({ ...movimento, motivo: v })} />
-
-            <View className="flex-row gap-x-3 mt-2">
-              <TouchableOpacity className="flex-1 border-2 border-ink rounded-2xl h-12 items-center justify-center bg-white"
-                onPress={() => setMovimento(null)}>
-                <Text className="text-base font-bold text-ink">Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity className="flex-1 bg-brand border-2 border-ink rounded-2xl h-12 items-center justify-center"
-                onPress={salvarMovimento} disabled={ocupado}>
-                {ocupado ? <ActivityIndicator color={theme.ink} /> : (
-                  <Text className="text-base font-bold text-ink">Registrar</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+            <Campo rotulo="Motivo" valor={movimento?.motivo ?? ''} placeholder="opcional"
+              aoMudar={(v) => movimento && setMovimento({ ...movimento, motivo: v })} />
           </View>
-        </KeyboardAvoidingView>
-      </Modal>
-    </SafeAreaView>
+
+          <View className="flex-row gap-x-3 mt-5">
+            <View className="flex-1"><BotaoVazado cor="muted" onPress={() => setMovimento(null)}>Cancelar</BotaoVazado></View>
+            <View className="flex-1"><Botao onPress={salvarMovimento} carregando={ocupado}>Registrar</Botao></View>
+          </View>
+        </ModalBase>
+      </SafeAreaView>
+    </Fundo>
   );
 }
 
-function Campo({ rotulo, valor, aoMudar, placeholder, tipoTeclado }: any) {
-  const [focado, setFocado] = useState(false);
-  return (
-    <View className="mb-3">
-      <Text className="text-sm font-semibold text-ink-soft mb-1.5">{rotulo}</Text>
-      <View className={`border-[1.5px] rounded-xl px-3 ${focado ? 'border-ink bg-brand-light' : 'border-ink bg-white'}`}>
-        <TextInput
-          className="text-ink text-base h-12"
-          value={valor} onChangeText={aoMudar}
-          onFocus={() => setFocado(true)} onBlur={() => setFocado(false)}
-          placeholder={placeholder} placeholderTextColor={theme.inkMuted}
-          keyboardType={tipoTeclado}
-        />
-      </View>
-    </View>
-  );
-}
+const estilos = {
+  titulo: { fontFamily: theme.mono, fontSize: 16, fontWeight: '700' as const, letterSpacing: 2, color: theme.text },
+};

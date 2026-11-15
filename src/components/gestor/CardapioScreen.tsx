@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import {
   View, Text, SectionList, TouchableOpacity, ActivityIndicator,
-  RefreshControl, Alert, Modal, TextInput, KeyboardAvoidingView, Platform, ScrollView,
+  RefreshControl, Alert, Modal, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,14 +12,12 @@ import {
 } from '../../services/cardapioService';
 import { SecaoCardapio, Produto } from '../../types';
 import { theme } from '../../style/theme';
+import { Botao, BotaoVazado, Cabecalho, Colchetes, Fundo, Regua, Rotulo, Selo, Vazio } from '../cyber';
+import { Campo } from '../cyber/Campo';
 
 type Rascunho = {
-  idProduto?: number;
-  nome: string;
-  descricao: string;
-  valor: string;
-  idProdutoCategoria: number;
-  ativo: boolean;
+  idProduto?: number; nome: string; descricao: string; valor: string;
+  idProdutoCategoria: number; ativo: boolean;
 };
 
 /**
@@ -56,45 +54,35 @@ export default function CardapioScreen() {
 
   const alternar = async (produto: Produto) => {
     const novo = !produto.disponivel;
-    // Otimista: reflete já, desfaz se a API recusar.
-    setSecoes((atual) =>
+    const aplica = (v: boolean) => setSecoes((atual) =>
       atual.map((s) => ({
         ...s,
-        produtos: s.produtos.map((p) => (p.idProduto === produto.idProduto ? { ...p, disponivel: novo } : p)),
+        produtos: s.produtos.map((p) => (p.idProduto === produto.idProduto ? { ...p, disponivel: v } : p)),
       }))
     );
+    aplica(novo);
     try {
       await alternarDisponibilidade(produto.idProduto, novo);
     } catch (e: any) {
-      setSecoes((atual) =>
-        atual.map((s) => ({
-          ...s,
-          produtos: s.produtos.map((p) => (p.idProduto === produto.idProduto ? { ...p, disponivel: !novo } : p)),
-        }))
-      );
-      Alert.alert('Não foi possível atualizar', e.message ?? 'Tente novamente.');
+      aplica(!novo);
+      Alert.alert('Falha na atualização', e.message ?? 'Tente novamente.');
     }
   };
 
   const salvar = async () => {
     if (!editando) return;
     const valor = Number(editando.valor.replace(',', '.'));
-    if (!editando.nome.trim()) return Alert.alert('Atenção', 'O produto precisa de um nome.');
-    if (!Number.isFinite(valor) || valor < 0) return Alert.alert('Atenção', 'Informe um preço válido.');
+    if (!editando.nome.trim()) return Alert.alert('Dados incompletos', 'O produto precisa de um nome.');
+    if (!Number.isFinite(valor) || valor < 0) return Alert.alert('Dados inválidos', 'Informe um preço válido.');
 
     setSalvando(true);
     try {
       const dados = {
-        nome: editando.nome.trim(),
-        descricao: editando.descricao.trim(),
-        valor,
-        idProdutoCategoria: editando.idProdutoCategoria,
+        nome: editando.nome.trim(), descricao: editando.descricao.trim(),
+        valor, idProdutoCategoria: editando.idProdutoCategoria,
       };
-      if (editando.idProduto) {
-        await atualizarProduto(editando.idProduto, { ...dados, ativo: editando.ativo ? 1 : 0 });
-      } else {
-        await criarProduto(dados);
-      }
+      if (editando.idProduto) await atualizarProduto(editando.idProduto, { ...dados, ativo: editando.ativo ? 1 : 0 });
+      else await criarProduto(dados);
       setEditando(null);
       await carregar();
     } catch (e: any) {
@@ -106,12 +94,12 @@ export default function CardapioScreen() {
 
   const excluirProduto = (produto: Produto) => {
     Alert.alert(
-      'Tirar do cardápio?',
+      'Remover do cardápio?',
       `"${produto.nome}" sai da lista do garçom. O histórico de vendas é preservado e você pode reativá-lo depois.`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Tirar do cardápio', style: 'destructive',
+          text: 'Remover', style: 'destructive',
           onPress: async () => {
             try { await removerProduto(produto.idProduto); await carregar(); }
             catch (e: any) { Alert.alert('Erro', e.message ?? 'Tente novamente.'); }
@@ -149,230 +137,221 @@ export default function CardapioScreen() {
 
   if (carregando) {
     return (
-      <SafeAreaView className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator size="large" color={theme.ink} />
-      </SafeAreaView>
+      <Fundo>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={theme.neon} />
+        </View>
+      </Fundo>
     );
   }
 
   const emFalta = secoes.flatMap((s) => s.produtos).filter((p) => p.ativo && !p.disponivel).length;
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <View className="px-5 pt-2 pb-4 border-b border-ink flex-row items-center justify-between">
-        <View>
-          <Text className="text-2xl font-extrabold text-ink">Cardápio</Text>
-          {emFalta > 0 && (
-            <Text className="text-sm font-semibold text-ink mt-0.5">{emFalta} item(ns) em falta hoje</Text>
-          )}
-        </View>
-        <View className="flex-row items-center gap-x-2">
-          <TouchableOpacity
-            className="p-2 rounded-full border border-ink"
-            onPress={() => router.push('/(gestor)/salao')}
-          >
-            <Ionicons name="people-outline" size={18} color={theme.ink} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="p-2 rounded-full border border-ink"
-            onPress={() => router.push('/(gestor)/mesas')}
-          >
-            <Ionicons name="grid-outline" size={18} color={theme.ink} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="px-3 py-2 rounded-full border border-ink bg-brand"
-            onPress={() => setNovaCategoria('')}
-          >
-            <Text className="text-xs font-bold text-ink">+ Categoria</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <SectionList
-        sections={secoes.map((s) => ({ ...s, data: s.produtos }))}
-        keyExtractor={(p) => String(p.idProduto)}
-        stickySectionHeadersEnabled={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
-        refreshControl={
-          <RefreshControl refreshing={atualizando} onRefresh={() => { setAtualizando(true); carregar(); }} tintColor={theme.ink} />
-        }
-        ListEmptyComponent={
-          <View className="items-center mt-24 px-10">
-            <Ionicons name="book-outline" size={48} color={theme.inkMuted} />
-            <Text className="text-ink-soft text-center mt-3">
-              Cardápio vazio. Crie uma categoria para começar.
-            </Text>
-          </View>
-        }
-        renderSectionHeader={({ section }) => {
-          const s = section as unknown as SecaoCardapio;
-          return (
-            <View className="flex-row items-center justify-between px-5 py-3 bg-brand-light border-y border-ink mt-4">
-              <Text className="text-sm font-extrabold text-ink">{s.categoria.toUpperCase()}</Text>
-              <View className="flex-row items-center gap-x-3">
-                <TouchableOpacity
-                  onPress={() => setEditando({
-                    nome: '', descricao: '', valor: '',
-                    idProdutoCategoria: s.idProdutoCategoria, ativo: true,
-                  })}
-                  disabled={s.idProdutoCategoria === null}
-                >
-                  <Ionicons name="add-circle" size={24} color={theme.ink} />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => excluirCategoria(s)} disabled={s.idProdutoCategoria === null}>
-                  <Ionicons name="trash-outline" size={20} color={theme.inkMuted} />
-                </TouchableOpacity>
-              </View>
+    <Fundo>
+      <SafeAreaView className="flex-1" edges={['top']}>
+        <Cabecalho
+          titulo="Cardápio"
+          sub={emFalta > 0 ? `${emFalta} item(ns) em falta hoje` : 'tudo disponível'}
+          direita={
+            <View className="flex-row items-center gap-x-2">
+              <IconeTopo icone="people-outline" cor={theme.cyan} onPress={() => router.push('/(gestor)/salao')} />
+              <IconeTopo icone="grid-outline" cor={theme.cyan} onPress={() => router.push('/(gestor)/mesas')} />
+              <TouchableOpacity
+                className="px-3 items-center justify-center"
+                style={{ height: 40, backgroundColor: theme.neon }}
+                onPress={() => setNovaCategoria('')}
+              >
+                <Text style={{ fontFamily: theme.mono, fontSize: 10, fontWeight: '700', letterSpacing: 1, color: theme.void }}>
+                  + CAT
+                </Text>
+                <Colchetes cor="neon" tamanho={7} espessura={2} />
+              </TouchableOpacity>
             </View>
-          );
-        }}
-        renderItem={({ item }) => (
-          <LinhaProduto
-            produto={item}
-            onAlternar={() => alternar(item)}
-            onEditar={() => setEditando({
-              idProduto: item.idProduto, nome: item.nome, descricao: item.descricao,
-              valor: String(item.valor), idProdutoCategoria: item.idProdutoCategoria, ativo: item.ativo,
-            })}
-            onExcluir={() => excluirProduto(item)}
-          />
-        )}
-      />
+          }
+        />
 
-      <ModalProduto
-        rascunho={editando}
-        salvando={salvando}
-        onMudar={setEditando}
-        onCancelar={() => setEditando(null)}
-        onSalvar={salvar}
-      />
+        <SectionList
+          sections={secoes.map((s) => ({ ...s, data: s.produtos }))}
+          keyExtractor={(p) => String(p.idProduto)}
+          stickySectionHeadersEnabled={false}
+          contentContainerStyle={{ paddingBottom: 40 }}
+          refreshControl={
+            <RefreshControl refreshing={atualizando} onRefresh={() => { setAtualizando(true); carregar(); }}
+              tintColor={theme.neon} colors={[theme.neon]} progressBackgroundColor={theme.surface} />
+          }
+          ListEmptyComponent={
+            <Vazio icone="book-outline" titulo="Cardápio vazio"
+              texto="Crie uma categoria para começar." />
+          }
+          renderSectionHeader={({ section }) => {
+            const s = section as unknown as SecaoCardapio;
+            return (
+              <View className="mt-5">
+                <Regua cor="cyan" />
+                <View
+                  className="flex-row items-center justify-between px-4 py-2.5"
+                  style={{ backgroundColor: theme.raised, borderBottomWidth: 1, borderBottomColor: theme.line }}
+                >
+                  <Text style={{ fontFamily: theme.mono, fontSize: 12, fontWeight: '700', letterSpacing: 2, color: theme.cyan }}>
+                    {s.categoria.toUpperCase()}
+                  </Text>
+                  <View className="flex-row items-center gap-x-4">
+                    <TouchableOpacity
+                      onPress={() => setEditando({
+                        nome: '', descricao: '', valor: '',
+                        idProdutoCategoria: s.idProdutoCategoria, ativo: true,
+                      })}
+                      disabled={s.idProdutoCategoria === null}
+                    >
+                      <Ionicons name="add-circle" size={22} color={theme.neon} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => excluirCategoria(s)} disabled={s.idProdutoCategoria === null}>
+                      <Ionicons name="trash-outline" size={18} color={theme.muted} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            );
+          }}
+          renderItem={({ item }) => (
+            <LinhaProduto
+              produto={item}
+              onAlternar={() => alternar(item)}
+              onEditar={() => setEditando({
+                idProduto: item.idProduto, nome: item.nome, descricao: item.descricao,
+                valor: String(item.valor), idProdutoCategoria: item.idProdutoCategoria, ativo: item.ativo,
+              })}
+              onExcluir={() => excluirProduto(item)}
+            />
+          )}
+        />
 
-      <ModalCategoria
-        valor={novaCategoria}
-        onMudar={setNovaCategoria}
-        onCancelar={() => setNovaCategoria(null)}
-        onSalvar={salvarCategoria}
-      />
-    </SafeAreaView>
+        {/* Produto */}
+        <ModalBase visivel={!!editando} aoFechar={() => setEditando(null)}>
+          <Text style={estilos.tituloModal}>
+            {editando?.idProduto ? 'EDITAR PRODUTO' : 'NOVO PRODUTO'}
+          </Text>
+          <View className="gap-y-3 mt-4">
+            <Campo rotulo="Nome" valor={editando?.nome ?? ''} placeholder="Filé à parmegiana"
+              aoMudar={(v) => editando && setEditando({ ...editando, nome: v })} />
+            <Campo rotulo="Descrição" valor={editando?.descricao ?? ''} placeholder="Acompanha arroz e fritas"
+              aoMudar={(v) => editando && setEditando({ ...editando, descricao: v })} />
+            <Campo rotulo="Preço (R$)" valor={editando?.valor ?? ''} placeholder="62,00" tipoTeclado="decimal-pad"
+              aoMudar={(v) => editando && setEditando({ ...editando, valor: v })} />
+          </View>
+
+          {editando?.idProduto && (
+            <TouchableOpacity
+              className="flex-row items-center justify-between py-4 mt-2"
+              onPress={() => setEditando({ ...editando, ativo: !editando.ativo })}
+            >
+              <View className="flex-1 pr-3">
+                <Rotulo cor={editando.ativo ? 'neon' : 'muted'}>no cardápio</Rotulo>
+                <Text style={{ fontFamily: theme.mono, fontSize: 10, color: theme.muted, marginTop: 3 }}>
+                  desligar tira da lista do garçom sem apagar o histórico
+                </Text>
+              </View>
+              <View style={{
+                width: 52, height: 26, borderWidth: 1,
+                borderColor: editando.ativo ? theme.neon : theme.line,
+                backgroundColor: editando.ativo ? theme.neon : theme.surface,
+                justifyContent: 'center', paddingHorizontal: 2,
+              }}>
+                <View style={{
+                  width: 20, height: 20,
+                  backgroundColor: editando.ativo ? theme.void : theme.muted,
+                  alignSelf: editando.ativo ? 'flex-end' : 'flex-start',
+                }} />
+              </View>
+            </TouchableOpacity>
+          )}
+
+          <View className="flex-row gap-x-3 mt-4">
+            <View className="flex-1"><BotaoVazado cor="muted" onPress={() => setEditando(null)}>Cancelar</BotaoVazado></View>
+            <View className="flex-1"><Botao onPress={salvar} carregando={salvando}>Salvar</Botao></View>
+          </View>
+        </ModalBase>
+
+        {/* Categoria */}
+        <ModalBase visivel={novaCategoria !== null} aoFechar={() => setNovaCategoria(null)}>
+          <Text style={estilos.tituloModal}>NOVA CATEGORIA</Text>
+          <View className="mt-4">
+            <Campo rotulo="Nome" valor={novaCategoria ?? ''} placeholder="Pratos principais"
+              aoMudar={(v) => setNovaCategoria(v)} />
+          </View>
+          <View className="flex-row gap-x-3 mt-4">
+            <View className="flex-1"><BotaoVazado cor="muted" onPress={() => setNovaCategoria(null)}>Cancelar</BotaoVazado></View>
+            <View className="flex-1"><Botao onPress={salvarCategoria}>Criar</Botao></View>
+          </View>
+        </ModalBase>
+      </SafeAreaView>
+    </Fundo>
   );
 }
 
-function LinhaProduto({
-  produto, onAlternar, onEditar, onExcluir,
-}: { produto: Produto; onAlternar: () => void; onEditar: () => void; onExcluir: () => void }) {
-  const foraDoCardapio = !produto.ativo;
+function LinhaProduto({ produto, onAlternar, onEditar, onExcluir }: {
+  produto: Produto; onAlternar: () => void; onEditar: () => void; onExcluir: () => void;
+}) {
+  const fora = !produto.ativo;
   const emFalta = produto.ativo && !produto.disponivel;
 
   return (
-    <View className={`flex-row items-center px-5 py-3 border-b border-ink ${emFalta ? 'bg-brand-light' : 'bg-white'}`}>
+    <View
+      className="flex-row items-center px-4 py-3"
+      style={{
+        borderBottomWidth: 1, borderBottomColor: theme.line,
+        backgroundColor: emFalta ? theme.raised : 'transparent',
+      }}
+    >
       <TouchableOpacity className="flex-1 pr-3" onPress={onEditar} activeOpacity={0.7}>
         <View className="flex-row items-center gap-x-2">
           <Text
-            className={`text-base font-semibold ${foraDoCardapio ? 'text-ink-muted' : 'text-ink'}`}
-            style={foraDoCardapio ? { textDecorationLine: 'line-through' } : undefined}
+            style={{
+              fontFamily: theme.mono, fontSize: 13, fontWeight: '700', letterSpacing: 0.5,
+              color: fora ? theme.muted : theme.text,
+              textDecorationLine: fora ? 'line-through' : 'none',
+            }}
           >
-            {produto.nome}
+            {produto.nome.toUpperCase()}
           </Text>
-          {foraDoCardapio && (
-            <View className="px-2 py-0.5 rounded-full border border-ink-muted">
-              <Text className="text-[10px] font-bold text-ink-muted">FORA</Text>
-            </View>
-          )}
+          {fora && <Selo cor="muted">fora</Selo>}
         </View>
-        <Text className={`text-sm mt-0.5 ${foraDoCardapio ? 'text-ink-muted' : 'text-ink-soft'}`}>
+        <Text style={{ fontFamily: theme.mono, fontSize: 12, color: fora ? theme.muted : theme.neon, marginTop: 3 }}>
           R$ {produto.valor.toFixed(2)}
         </Text>
       </TouchableOpacity>
 
       {/* O toque principal da tela: acabou / voltou. */}
       {produto.ativo && (
-        <TouchableOpacity
-          className={`px-3 py-2 rounded-full border-2 border-ink mr-2 ${produto.disponivel ? 'bg-white' : 'bg-brand'}`}
-          onPress={onAlternar}
-          activeOpacity={0.8}
-        >
-          <Text className="text-[11px] font-bold text-ink">
-            {produto.disponivel ? 'Tem' : 'ACABOU'}
-          </Text>
+        <TouchableOpacity className="mr-2" onPress={onAlternar} activeOpacity={0.8}>
+          <Selo cor={produto.disponivel ? 'cyan' : 'magenta'} solido={!produto.disponivel}>
+            {produto.disponivel ? 'tem' : 'acabou'}
+          </Selo>
         </TouchableOpacity>
       )}
 
       <TouchableOpacity onPress={onExcluir} className="p-1">
-        <Ionicons name="ellipsis-vertical" size={18} color={theme.inkMuted} />
+        <Ionicons name="ellipsis-vertical" size={16} color={theme.muted} />
       </TouchableOpacity>
     </View>
   );
 }
 
-function ModalProduto({
-  rascunho, salvando, onMudar, onCancelar, onSalvar,
-}: {
-  rascunho: Rascunho | null; salvando: boolean;
-  onMudar: (r: Rascunho) => void; onCancelar: () => void; onSalvar: () => void;
+export function ModalBase({ visivel, aoFechar, children }: {
+  visivel: boolean; aoFechar: () => void; children: React.ReactNode;
 }) {
   return (
-    <Modal visible={!!rascunho} transparent animationType="slide" onRequestClose={onCancelar}>
+    <Modal visible={visivel} transparent animationType="slide" onRequestClose={aoFechar}>
       <KeyboardAvoidingView
         className="flex-1 justify-end"
-        style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+        style={{ backgroundColor: 'rgba(5,6,10,0.85)' }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View className="bg-white rounded-t-3xl border-t-2 border-ink p-5 pb-8">
-          <ScrollView keyboardShouldPersistTaps="handled">
-            <Text className="text-lg font-extrabold text-ink mb-4">
-              {rascunho?.idProduto ? 'Editar produto' : 'Novo produto'}
-            </Text>
-
-            <Campo
-              rotulo="Nome" valor={rascunho?.nome ?? ''}
-              aoMudar={(v: string) => rascunho && onMudar({ ...rascunho, nome: v })}
-              placeholder="Filé à parmegiana"
-            />
-            <Campo
-              rotulo="Descrição" valor={rascunho?.descricao ?? ''}
-              aoMudar={(v: string) => rascunho && onMudar({ ...rascunho, descricao: v })}
-              placeholder="Acompanha arroz e fritas"
-            />
-            <Campo
-              rotulo="Preço (R$)" valor={rascunho?.valor ?? ''}
-              aoMudar={(v: string) => rascunho && onMudar({ ...rascunho, valor: v })}
-              placeholder="62,00" tipoTeclado="decimal-pad"
-            />
-
-            {rascunho?.idProduto && (
-              <TouchableOpacity
-                className="flex-row items-center justify-between py-3 mb-2"
-                onPress={() => onMudar({ ...rascunho, ativo: !rascunho.ativo })}
-              >
-                <View className="flex-1 pr-3">
-                  <Text className="text-sm font-semibold text-ink">No cardápio</Text>
-                  <Text className="text-[11px] text-ink-soft">
-                    Desligar tira da lista do garçom sem apagar o histórico.
-                  </Text>
-                </View>
-                <View className={`w-12 h-7 rounded-full border-2 border-ink justify-center px-0.5 ${rascunho.ativo ? 'bg-brand' : 'bg-white'}`}>
-                  <View className={`w-5 h-5 rounded-full bg-ink ${rascunho.ativo ? 'self-end' : 'self-start'}`} />
-                </View>
-              </TouchableOpacity>
-            )}
-
-            <View className="flex-row gap-x-3 mt-2">
-              <TouchableOpacity
-                className="flex-1 border-2 border-ink rounded-2xl h-12 items-center justify-center bg-white"
-                onPress={onCancelar}
-              >
-                <Text className="text-base font-bold text-ink">Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="flex-1 bg-brand border-2 border-ink rounded-2xl h-12 items-center justify-center"
-                onPress={onSalvar}
-                disabled={salvando}
-              >
-                {salvando ? <ActivityIndicator color={theme.ink} /> : (
-                  <Text className="text-base font-bold text-ink">Salvar</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+        <View style={{ backgroundColor: theme.surface, borderTopWidth: 1, borderTopColor: theme.neon, maxHeight: '88%' }}>
+          <Regua />
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, paddingBottom: 32 }}>
+            {children}
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
@@ -380,59 +359,23 @@ function ModalProduto({
   );
 }
 
-function ModalCategoria({
-  valor, onMudar, onCancelar, onSalvar,
-}: { valor: string | null; onMudar: (v: string) => void; onCancelar: () => void; onSalvar: () => void }) {
+export function IconeTopo({ icone, cor, onPress }: {
+  icone: React.ComponentProps<typeof Ionicons>['name']; cor: string; onPress: () => void;
+}) {
   return (
-    <Modal visible={valor !== null} transparent animationType="slide" onRequestClose={onCancelar}>
-      <KeyboardAvoidingView
-        className="flex-1 justify-end"
-        style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View className="bg-white rounded-t-3xl border-t-2 border-ink p-5 pb-8">
-          <Text className="text-lg font-extrabold text-ink mb-4">Nova categoria</Text>
-          <Campo
-            rotulo="Nome" valor={valor ?? ''} aoMudar={onMudar}
-            placeholder="Pratos principais"
-          />
-          <View className="flex-row gap-x-3 mt-2">
-            <TouchableOpacity
-              className="flex-1 border-2 border-ink rounded-2xl h-12 items-center justify-center bg-white"
-              onPress={onCancelar}
-            >
-              <Text className="text-base font-bold text-ink">Cancelar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="flex-1 bg-brand border-2 border-ink rounded-2xl h-12 items-center justify-center"
-              onPress={onSalvar}
-            >
-              <Text className="text-base font-bold text-ink">Criar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+    <TouchableOpacity
+      className="items-center justify-center"
+      style={{ width: 40, height: 40, borderWidth: 1, borderColor: theme.line, backgroundColor: theme.surface }}
+      onPress={onPress}
+    >
+      <Ionicons name={icone} size={17} color={cor} />
+    </TouchableOpacity>
   );
 }
 
-function Campo({ rotulo, valor, aoMudar, placeholder, tipoTeclado }: any) {
-  const [focado, setFocado] = useState(false);
-  return (
-    <View className="mb-3">
-      <Text className="text-sm font-semibold text-ink-soft mb-1.5">{rotulo}</Text>
-      <View className={`border-[1.5px] rounded-xl px-3 ${focado ? 'border-ink bg-brand-light' : 'border-ink bg-white'}`}>
-        <TextInput
-          className="text-ink text-base h-12"
-          value={valor}
-          onChangeText={aoMudar}
-          onFocus={() => setFocado(true)}
-          onBlur={() => setFocado(false)}
-          placeholder={placeholder}
-          placeholderTextColor={theme.inkMuted}
-          keyboardType={tipoTeclado}
-        />
-      </View>
-    </View>
-  );
-}
+const estilos = {
+  tituloModal: {
+    fontFamily: theme.mono, fontSize: 16, fontWeight: '700' as const,
+    letterSpacing: 2, color: theme.text,
+  },
+};

@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
 import { useFilaEnvioStore } from '../store/filaEnvioStore';
 import { theme } from '../style/theme';
+import { BotaoVazado, Cabecalho, Colchetes, Divisor, Fundo, Halo, LinhaDado, Rotulo, Selo } from './cyber';
 
 const ROTULO_PAPEL: Record<string, string> = {
   gestor: 'Gestor', garcom: 'Garçom', cozinha: 'Cozinha',
@@ -27,59 +28,71 @@ export default function ContaScreen() {
       ? `Há ${pendentes} rodada(s) ainda não enviadas. Elas serão perdidas.`
       : 'Você precisará entrar novamente.';
 
-    Alert.alert('Sair da conta?', aviso, [
+    Alert.alert('Encerrar sessão?', aviso, [
       { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Sair', style: 'destructive',
-        onPress: () => { clearAuth(); router.replace('/'); },
-      },
+      { text: 'Sair', style: 'destructive', onPress: () => { clearAuth(); router.replace('/'); } },
     ]);
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <View className="px-5 pt-2 pb-4 border-b border-ink">
-        <Text className="text-2xl font-extrabold text-ink">Conta</Text>
-      </View>
+    <Fundo>
+      <SafeAreaView className="flex-1" edges={['top']}>
+        <Cabecalho
+          titulo="Conta"
+          sub="sessão ativa"
+          direita={
+            router.canGoBack() ? (
+              <TouchableOpacity
+                onPress={() => router.back()}
+                className="items-center justify-center"
+                style={{ width: 40, height: 40, borderWidth: 1, borderColor: theme.line, backgroundColor: theme.surface }}
+              >
+                <Ionicons name="close" size={18} color={theme.muted} />
+              </TouchableOpacity>
+            ) : undefined
+          }
+        />
 
-      <View className="items-center mt-8 mb-8">
-        <View className="w-20 h-20 rounded-2xl bg-brand border-2 border-ink items-center justify-center mb-3">
-          <Ionicons name="person" size={38} color={theme.ink} />
+        <View className="px-4 pt-8">
+          <View className="items-center">
+            <Halo cor="neon" intensidade={1.1}>
+              <View className="items-center justify-center" style={{ width: 80, height: 80, backgroundColor: theme.neon }}>
+                <Ionicons name="person" size={38} color={theme.void} />
+                <Colchetes cor="neon" tamanho={14} espessura={3} />
+              </View>
+            </Halo>
+
+            <Text className="mt-5" style={{ fontFamily: theme.mono, fontSize: 18, fontWeight: '700', color: theme.text, letterSpacing: 1 }}>
+              {(user?.nome ?? '').toUpperCase()}
+            </Text>
+            <Text style={{ fontFamily: theme.mono, fontSize: 11, color: theme.muted, marginTop: 4 }}>
+              {user?.email ?? ''}
+            </Text>
+            <View className="mt-3">
+              <Selo cor="neon" solido>{ROTULO_PAPEL[papel ?? ''] ?? papel}</Selo>
+            </View>
+          </View>
+
+          <Divisor cor="cyan">sessão</Divisor>
+
+          <View className="px-4 py-2" style={{ borderWidth: 1, borderColor: theme.line, backgroundColor: theme.surface }}>
+            <LinhaDado rotulo="Unidade" valor={empresa?.nome ?? '—'} cor="cyan" />
+            <LinhaDado rotulo="ID operador" valor={String(user?.id ?? '—').padStart(4, '0')} />
+            <LinhaDado
+              rotulo="Fila de envio"
+              valor={pendentes > 0 ? `${pendentes} pendente(s)` : 'vazia'}
+              cor={pendentes > 0 ? 'magenta' : 'text'}
+            />
+            <Colchetes cor="muted" tamanho={9} espessura={1} />
+          </View>
+
+          <View className="mt-8">
+            <BotaoVazado cor="danger" icone="log-out-outline" onPress={sair}>
+              Encerrar sessão
+            </BotaoVazado>
+          </View>
         </View>
-        <Text className="text-xl font-bold text-ink">{user?.nome ?? ''}</Text>
-        <Text className="text-sm text-ink-soft mt-0.5">{user?.email ?? ''}</Text>
-        <View className="mt-3 px-4 py-1.5 rounded-full border-2 border-ink bg-brand">
-          <Text className="text-xs font-bold text-ink">
-            {ROTULO_PAPEL[papel ?? ''] ?? papel}
-          </Text>
-        </View>
-      </View>
-
-      <View className="mx-5 rounded-2xl border border-ink overflow-hidden">
-        <Linha icone="storefront-outline" rotulo="Restaurante" valor={empresa?.nome ?? '—'} />
-        {pendentes > 0 && (
-          <Linha icone="cloud-offline-outline" rotulo="Aguardando envio" valor={`${pendentes} rodada(s)`} />
-        )}
-      </View>
-
-      <TouchableOpacity
-        className="mx-5 mt-6 border-2 border-danger rounded-2xl h-12 items-center justify-center bg-danger-light flex-row gap-x-2"
-        onPress={sair}
-        activeOpacity={0.85}
-      >
-        <Ionicons name="log-out-outline" size={20} color={theme.danger} />
-        <Text className="text-base font-bold text-danger">Sair da conta</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
-  );
-}
-
-function Linha({ icone, rotulo, valor }: { icone: any; rotulo: string; valor: string }) {
-  return (
-    <View className="flex-row items-center px-4 py-3 border-b border-ink last:border-b-0">
-      <Ionicons name={icone} size={20} color={theme.ink} />
-      <Text className="flex-1 ml-3 text-sm font-semibold text-ink">{rotulo}</Text>
-      <Text className="text-sm text-ink-soft">{valor}</Text>
-    </View>
+      </SafeAreaView>
+    </Fundo>
   );
 }

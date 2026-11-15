@@ -7,21 +7,34 @@ import { listarFilaCozinha, avancarStatus } from '../../services/salaoService';
 import { useAuthStore } from '../../store/authStore';
 import { Rodada, StatusRodada } from '../../types';
 import { theme } from '../../style/theme';
+import { Cabecalho, Colchetes, Fundo, Halo, Numero, Rotulo, Selo, Vazio, Regua } from '../cyber';
 
 /** Intervalo do polling. Ver a nota sobre tempo real no fim do arquivo. */
 const INTERVALO_MS = 10_000;
 
 const PROXIMO: Partial<Record<StatusRodada, { status: StatusRodada; rotulo: string }>> = {
-  enviado: { status: 'em_preparo', rotulo: 'Começar preparo' },
+  enviado: { status: 'em_preparo', rotulo: 'Iniciar preparo' },
   em_preparo: { status: 'pronto', rotulo: 'Marcar pronto' },
+};
+
+// Escala de calor: ciano = esperando, neon = em preparo, magenta = pronto.
+// Cor aqui não é decoração — é o que diz à cozinha onde olhar primeiro.
+const COR: Record<StatusRodada, 'cyan' | 'neon' | 'magenta' | 'muted'> = {
+  enviado: 'cyan', em_preparo: 'neon', pronto: 'magenta',
+  entregue: 'muted', cancelado: 'muted',
+};
+
+const ROTULO: Record<StatusRodada, string> = {
+  enviado: 'na fila', em_preparo: 'preparando', pronto: 'pronto',
+  entregue: 'entregue', cancelado: 'cancelado',
 };
 
 /**
  * Painel da cozinha (KDS).
  *
- * Ordenado pela chegada: o que entrou primeiro sai primeiro. Cada cartão é
- * grande e de alto contraste porque é lido de pé, a dois metros, por alguém
- * com as mãos ocupadas.
+ * Ordenado pela chegada: o que entrou primeiro sai primeiro. Tipografia
+ * grande e alto contraste porque é lido de pé, a dois metros, por alguém com
+ * as mãos ocupadas.
  */
 export default function CozinhaScreen() {
   const [fila, setFila] = useState<Rodada[]>([]);
@@ -55,7 +68,7 @@ export default function CozinhaScreen() {
       await avancarStatus(rodada.idPedido, status);
       await carregar();
     } catch (e: any) {
-      Alert.alert('Não foi possível atualizar', e.message ?? 'Tente novamente.');
+      Alert.alert('Falha na atualização', e.message ?? 'Tente novamente.');
     } finally {
       setAgindo(null);
     }
@@ -63,128 +76,170 @@ export default function CozinhaScreen() {
 
   if (carregando) {
     return (
-      <SafeAreaView className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator size="large" color={theme.ink} />
-      </SafeAreaView>
+      <Fundo>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={theme.neon} />
+          <View className="mt-4"><Rotulo cor="muted">sincronizando fila</Rotulo></View>
+        </View>
+      </Fundo>
     );
   }
 
+  const prontos = fila.filter((r) => r.status === 'pronto').length;
+
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <View className="px-5 pt-2 pb-4 border-b border-ink flex-row items-center justify-between">
-        <View>
-          <Text className="text-2xl font-extrabold text-ink">Cozinha</Text>
-          <Text className="text-sm text-ink-soft mt-0.5">
-            {fila.length} pedido(s) na fila · {empresa?.nome}
-          </Text>
-        </View>
-        <View className="flex-row gap-x-2">
-          <TouchableOpacity onPress={carregar} className="p-2 rounded-full border border-ink">
-            <Ionicons name="refresh" size={20} color={theme.ink} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/conta')} className="p-2 rounded-full border border-ink">
-            <Ionicons name="person-outline" size={20} color={theme.ink} />
-          </TouchableOpacity>
-        </View>
-      </View>
+    <Fundo>
+      <SafeAreaView className="flex-1" edges={['top']}>
+        <Cabecalho
+          titulo="Cozinha"
+          sub={`${fila.length} na fila · ${prontos} pronto(s) · ${empresa?.nome ?? ''}`}
+          direita={
+            <View className="flex-row gap-x-2">
+              <TouchableOpacity
+                onPress={carregar}
+                className="items-center justify-center"
+                style={{ width: 40, height: 40, borderWidth: 1, borderColor: theme.line, backgroundColor: theme.surface }}
+              >
+                <Ionicons name="refresh" size={18} color={theme.neon} />
+                <Colchetes cor="neon" tamanho={7} espessura={1} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push('/conta')}
+                className="items-center justify-center"
+                style={{ width: 40, height: 40, borderWidth: 1, borderColor: theme.line, backgroundColor: theme.surface }}
+              >
+                <Ionicons name="person-outline" size={18} color={theme.cyan} />
+                <Colchetes cor="cyan" tamanho={7} espessura={1} />
+              </TouchableOpacity>
+            </View>
+          }
+        />
 
-      {erro && (
-        <View className="mx-5 mt-3 px-4 py-3 rounded-2xl bg-danger-light border border-danger">
-          <Text className="text-sm font-semibold text-danger">{erro}</Text>
-        </View>
-      )}
-
-      <FlatList
-        data={fila}
-        keyExtractor={(r) => String(r.idPedido)}
-        contentContainerStyle={{ padding: 20, gap: 14 }}
-        ListEmptyComponent={
-          <View className="items-center mt-24">
-            <Ionicons name="checkmark-done-circle-outline" size={56} color={theme.inkMuted} />
-            <Text className="text-lg font-bold text-ink mt-3">Fila vazia</Text>
-            <Text className="text-sm text-ink-soft mt-1">Nenhum pedido aguardando preparo.</Text>
+        {erro && (
+          <View className="mx-4 mt-3 px-3 py-2.5" style={{ borderWidth: 1, borderColor: theme.danger, backgroundColor: theme.surface }}>
+            <Rotulo cor="danger">{erro}</Rotulo>
           </View>
-        }
-        renderItem={({ item }) => (
-          <CartaoRodada
-            rodada={item}
-            ocupado={agindo === item.idPedido}
-            onAvancar={(st) => avancar(item, st)}
-          />
         )}
-      />
-    </SafeAreaView>
+
+        <FlatList
+          data={fila}
+          keyExtractor={(r) => String(r.idPedido)}
+          contentContainerStyle={{ padding: 16, gap: 16 }}
+          ListEmptyComponent={
+            <Vazio icone="checkmark-done-circle-outline" titulo="Fila vazia"
+              texto="Nenhum pedido aguardando preparo." />
+          }
+          renderItem={({ item, index }) => (
+            <CartaoRodada
+              rodada={item}
+              posicao={index + 1}
+              ocupado={agindo === item.idPedido}
+              onAvancar={(st) => avancar(item, st)}
+            />
+          )}
+        />
+      </SafeAreaView>
+    </Fundo>
   );
 }
 
 function CartaoRodada({
-  rodada, ocupado, onAvancar,
-}: { rodada: Rodada; ocupado: boolean; onAvancar: (s: StatusRodada) => void }) {
+  rodada, posicao, ocupado, onAvancar,
+}: { rodada: Rodada; posicao: number; ocupado: boolean; onAvancar: (s: StatusRodada) => void }) {
   const proximo = PROXIMO[rodada.status];
-  // Amarelo cheio = em preparo agora; contorno = ainda na fila; a borda mais
-  // grossa no que está pronto puxa o olho de quem vai entregar.
-  const fundo = rodada.status === 'em_preparo' ? 'bg-brand' : 'bg-white';
-  const borda = rodada.status === 'pronto' ? 'border-4' : 'border-2';
+  const cor = COR[rodada.status];
+  const corSolida = cor === 'neon' ? theme.neon : cor === 'magenta' ? theme.magenta : cor === 'cyan' ? theme.cyan : theme.muted;
 
-  return (
-    <View className={`rounded-2xl ${borda} border-ink ${fundo} overflow-hidden`}>
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-ink">
-        <View className="flex-row items-baseline gap-x-2">
-          <Text className="text-2xl font-extrabold text-ink">
-            {rodada.numeroMesa ? `Mesa ${rodada.numeroMesa}` : 'Balcão'}
+  const corpo = (
+    <View style={{ backgroundColor: theme.surface, borderWidth: 1, borderColor: corSolida }}>
+      <Regua cor={cor} />
+
+      <View
+        className="flex-row items-center justify-between px-3 py-2.5"
+        style={{ backgroundColor: theme.raised, borderBottomWidth: 1, borderBottomColor: corSolida }}
+      >
+        <View className="flex-row items-baseline gap-x-3">
+          <Text style={{ fontFamily: theme.mono, fontSize: 11, color: theme.muted }}>
+            #{String(posicao).padStart(2, '0')}
           </Text>
-          <Text className="text-xs font-semibold text-ink-soft">{espera(rodada.dtPedido)}</Text>
+          <Numero cor={cor} tamanho={22}>
+            {rodada.numeroMesa ? `MESA ${rodada.numeroMesa}` : 'BALCÃO'}
+          </Numero>
         </View>
-        {rodada.status === 'pronto' && (
-          <View className="px-3 py-1 rounded-full bg-ink">
-            <Text className="text-[11px] font-bold text-white">PRONTO</Text>
-          </View>
-        )}
+        <View className="flex-row items-center gap-x-2">
+          <Rotulo cor="muted" tamanho={10}>{espera(rodada.dtPedido)}</Rotulo>
+          <Selo cor={cor} solido={rodada.status === 'pronto'}>{ROTULO[rodada.status]}</Selo>
+        </View>
       </View>
 
-      <View className="px-4 py-3">
+      <View className="px-3 py-3">
         {rodada.itens.map((item) => (
-          <View key={item.idItensPedido} className="py-1.5">
-            <Text className="text-lg font-bold text-ink">
-              {item.quantidade}× {item.nomeProduto}
-            </Text>
-            {!!item.observacao && (
-              <View className="flex-row items-center gap-x-1 mt-0.5">
-                <Ionicons name="alert-circle" size={14} color={theme.ink} />
-                <Text className="text-sm font-semibold text-ink italic">{item.observacao}</Text>
-              </View>
-            )}
+          <View key={item.idItensPedido} className="py-2 flex-row">
+            <View
+              className="items-center justify-center mr-3"
+              style={{ width: 34, height: 34, borderWidth: 1, borderColor: corSolida, backgroundColor: theme.raised }}
+            >
+              <Text style={{ fontFamily: theme.mono, fontSize: 15, fontWeight: '700', color: corSolida }}>
+                {item.quantidade}
+              </Text>
+            </View>
+            <View className="flex-1 justify-center">
+              <Text style={{ fontFamily: theme.mono, fontSize: 16, fontWeight: '700', color: theme.text, letterSpacing: 0.5 }}>
+                {item.nomeProduto.toUpperCase()}
+              </Text>
+              {!!item.observacao && (
+                <View className="flex-row items-center gap-x-1 mt-1">
+                  <Ionicons name="warning" size={12} color={theme.magenta} />
+                  <Text style={{ fontFamily: theme.mono, fontSize: 12, fontWeight: '700', color: theme.magenta, flex: 1 }}>
+                    {item.observacao.toUpperCase()}
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
         ))}
+
         {!!rodada.nomeGarcom && (
-          <Text className="text-[11px] text-ink-soft mt-2">Lançado por {rodada.nomeGarcom}</Text>
+          <View className="mt-2 pt-2" style={{ borderTopWidth: 1, borderTopColor: theme.line }}>
+            <Rotulo cor="muted" tamanho={9}>lançado por {rodada.nomeGarcom}</Rotulo>
+          </View>
         )}
       </View>
 
       {proximo && (
         <TouchableOpacity
-          className="border-t-2 border-ink py-4 items-center bg-white"
+          className="py-4 items-center"
+          style={{ borderTopWidth: 1, borderTopColor: corSolida, backgroundColor: theme.raised }}
           onPress={() => onAvancar(proximo.status)}
           disabled={ocupado}
-          activeOpacity={0.85}
+          activeOpacity={0.8}
         >
           {ocupado ? (
-            <ActivityIndicator color={theme.ink} />
+            <ActivityIndicator color={corSolida} />
           ) : (
-            <Text className="text-base font-extrabold text-ink">{proximo.rotulo}</Text>
+            <Text style={{ fontFamily: theme.mono, fontSize: 14, fontWeight: '700', letterSpacing: 2, color: corSolida, textTransform: 'uppercase' }}>
+              {'>> '}{proximo.rotulo}
+            </Text>
           )}
         </TouchableOpacity>
       )}
+
+      <Colchetes cor={cor} tamanho={14} espessura={2} />
     </View>
   );
+
+  // Só o prato pronto pulsa em halo: é o que precisa ser recolhido agora.
+  return rodada.status === 'pronto'
+    ? <Halo cor="magenta" intensidade={1.2}>{corpo}</Halo>
+    : corpo;
 }
 
 /** Tempo de espera: o número que diz à cozinha o que está atrasando. */
 function espera(iso: string): string {
   const min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (min < 1) return 'agora';
-  if (min < 60) return `${min} min`;
-  return `${Math.floor(min / 60)}h${String(min % 60).padStart(2, '0')}`;
+  if (min < 1) return 'AGORA';
+  if (min < 60) return `${min}MIN`;
+  return `${Math.floor(min / 60)}H${String(min % 60).padStart(2, '0')}`;
 }
 
 /*

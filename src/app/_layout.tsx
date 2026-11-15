@@ -42,6 +42,15 @@ function GuardaDeRota() {
       return;
     }
 
+    // Já autenticado e parado no login: vai para a home do papel. Este
+    // redirecionamento mora aqui, e não num efeito da tela de login, porque
+    // ali ele roda antes de o navegador raiz montar e estoura
+    // "Attempted to navigate before mounting the Root Layout".
+    if (!emAreaProtegida && papel) {
+      router.replace(rotaInicial(papel) as any);
+      return;
+    }
+
     if (emAreaProtegida && papel && !PERMITIDO[papel]?.includes(grupo!)) {
       router.replace(rotaInicial(papel) as any);
     }
@@ -85,7 +94,7 @@ function SincronizaFila() {
 export default function RootLayout() {
   return (
     <>
-      <StatusBar barStyle="dark-content" backgroundColor={theme.white} />
+      <StatusBar barStyle="light-content" backgroundColor={theme.void} />
       <GuardaDeRota />
       <SincronizaFila />
       <Stack screenOptions={{ headerShown: false }}>

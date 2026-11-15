@@ -1,9 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 
-// Paleta de três cores: amarelo predominante, preto nas linhas e no texto,
-// branco nas superfícies. Os valores vivem também em src/style/theme.ts, para
-// as props que não aceitam className (ícone, ActivityIndicator, tabBarStyle).
-// Mudar uma cor exige mudar nos dois lugares.
+// Maximalismo + futurismo + cyberpunk: neon sobre quase-preto.
+// Os valores vivem também em src/style/theme.ts, para as props que não aceitam
+// className. Mudar uma cor exige mudar nos dois lugares.
 module.exports = {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
@@ -13,25 +12,41 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        brand: {
-          // Amarelo saturado de sinalização. Texto preto sobre ele dá ~12:1 de
-          // contraste; texto branco dá 1,6:1 e por isso nunca é usado aqui.
-          DEFAULT: '#FFC800',
-          dark: '#C98A00',   // só preenchimento: estado pressionado de botão amarelo
-          light: '#FFF6D6',  // lavagem clara: foco de campo, fundo de seleção
+        // Fundos, do mais profundo ao mais elevado.
+        void: '#05060A',
+        surface: '#0D0F1A',
+        raised: '#151829',
+        line: '#2A2F4A',
+
+        // Tríade neon. `neon` é a primária e sempre recebe texto `void`.
+        neon: {
+          DEFAULT: '#FCEE0A',
+          dim: 'rgba(252, 238, 10, 0.38)',
+          ghost: 'rgba(252, 238, 10, 0.12)',
         },
-        ink: {
-          DEFAULT: '#111111', // texto principal e todas as linhas
-          soft: '#4A4A4A',    // texto secundário
-          muted: '#8A8A8A',   // placeholder e desabilitado
+        cyan: {
+          DEFAULT: '#00E5FF',
+          dim: 'rgba(0, 229, 255, 0.38)',
+          ghost: 'rgba(0, 229, 255, 0.12)',
         },
-        // Única cor fora da paleta. Ação destrutiva (remover item, excluir
-        // conta) perde o aviso se for preta igual ao resto, e confundir
-        // "remover" com "confirmar" num tablet de salão sai caro.
+        magenta: {
+          DEFAULT: '#FF2D95',
+          dim: 'rgba(255, 45, 149, 0.38)',
+          ghost: 'rgba(255, 45, 149, 0.12)',
+        },
+
+        text: '#EAECF5',
+        muted: '#7C819E',
         danger: {
-          DEFAULT: '#D92D20',
-          light: '#FEF3F2',
+          DEFAULT: '#FF3B5C',
+          ghost: 'rgba(255, 59, 92, 0.12)',
         },
+      },
+      letterSpacing: {
+        // Rótulo técnico em caixa alta pede respiro entre letras, senão vira
+        // bloco ilegível nos tamanhos pequenos que o estilo usa.
+        tecnico: '2px',
+        largo: '4px',
       },
     },
   },
