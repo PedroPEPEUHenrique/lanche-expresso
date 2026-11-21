@@ -34,7 +34,7 @@ export default function EquipeScreen() {
   const [atualizando, setAtualizando] = useState(false);
   const [novo, setNovo] = useState<{ nome: string; email: string; senha: string; papel: Papel } | null>(null);
   const [salvando, setSalvando] = useState(false);
-  const idUsuarioLogado = useAuthStore((s) => s.user?.id);
+  const idUsuarioLogado = useAuthStore((s) => s.user?.idUsuario);
 
   const carregar = useCallback(async () => {
     try {

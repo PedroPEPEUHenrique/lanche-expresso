@@ -77,7 +77,7 @@ export default function ContaScreen() {
 
           <View className="px-4 py-2" style={{ borderWidth: 1, borderColor: theme.line, backgroundColor: theme.surface }}>
             <LinhaDado rotulo="Unidade" valor={empresa?.nome ?? '—'} cor="cyan" />
-            <LinhaDado rotulo="ID operador" valor={String(user?.id ?? '—').padStart(4, '0')} />
+            <LinhaDado rotulo="ID operador" valor={String(user?.idUsuario ?? '—').padStart(4, '0')} />
             <LinhaDado
               rotulo="Fila de envio"
               valor={pendentes > 0 ? `${pendentes} pendente(s)` : 'vazia'}

@@ -1,15 +1,15 @@
 import { apiFetch } from './apiClient';
 import { Produto, ProdutoCategoria, SecaoCardapio } from '../types';
 
-/** Cardápio completo do gestor: inclui o que está em falta e o que saiu. */
+/**
+ * Cardápio do gestor.
+ *
+ * Sem conversão: a API responde no contrato.
+ */
+
+/** Inclui o que está em falta e o que saiu do cardápio — é aqui que volta. */
 export async function listarCardapioCompleto(): Promise<SecaoCardapio[]> {
-  const data = await apiFetch<any[]>('/cardapio', { mensagemErro: 'Erro ao carregar o cardápio' });
-  return data.map((s) => ({
-    idProdutoCategoria: s.id_produto_categoria,
-    categoria: s.categoria,
-    ordem: s.ordem,
-    produtos: (s.produtos ?? []).map(mapProduto),
-  }));
+  return await apiFetch<SecaoCardapio[]>('/cardapio', { mensagemErro: 'Erro ao carregar o cardápio' });
 }
 
 /**
@@ -18,18 +18,14 @@ export async function listarCardapioCompleto(): Promise<SecaoCardapio[]> {
  */
 export async function alternarDisponibilidade(idProduto: number, disponivel: boolean): Promise<void> {
   await apiFetch<void>(`/produtos/${idProduto}/disponibilidade`, {
-    method: 'PATCH',
-    body: { disponivel },
-    mensagemErro: 'Erro ao atualizar a disponibilidade',
+    method: 'PATCH', body: { disponivel }, mensagemErro: 'Erro ao atualizar a disponibilidade',
   });
 }
 
 export async function criarProduto(dados: {
   nome: string; descricao?: string; valor: number; idProdutoCategoria: number;
 }): Promise<void> {
-  await apiFetch<void>('/produtos', {
-    method: 'POST', body: dados, mensagemErro: 'Erro ao criar o produto',
-  });
+  await apiFetch<void>('/produtos', { method: 'POST', body: dados, mensagemErro: 'Erro ao criar o produto' });
 }
 
 export async function atualizarProduto(idProduto: number, dados: {
@@ -41,9 +37,7 @@ export async function atualizarProduto(idProduto: number, dados: {
 }
 
 export async function removerProduto(idProduto: number): Promise<void> {
-  await apiFetch<void>(`/produtos/${idProduto}`, {
-    method: 'DELETE', mensagemErro: 'Erro ao remover o produto',
-  });
+  await apiFetch<void>(`/produtos/${idProduto}`, { method: 'DELETE', mensagemErro: 'Erro ao remover o produto' });
 }
 
 export async function criarCategoria(categoria: string, ordem?: number): Promise<void> {
@@ -64,17 +58,4 @@ export async function removerCategoria(id: number): Promise<void> {
   });
 }
 
-function mapProduto(p: any): Produto {
-  return {
-    idProduto: p.id_produto,
-    idProdutoCategoria: p.id_produto_categoria,
-    nome: p.nome,
-    descricao: p.descricao ?? '',
-    valor: Number(p.valor),
-    icone: p.icone ?? undefined,
-    ativo: !!p.ativo,
-    disponivel: !!p.disponivel,
-  };
-}
-
-export type { ProdutoCategoria };
+export type { Produto, ProdutoCategoria };

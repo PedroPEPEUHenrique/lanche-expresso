@@ -1,31 +1,24 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Papel } from '../types';
+import { Papel, RespostaLogin, UsuarioContrato, EmpresaResumo } from '../types';
 
-export interface User {
-  id: number;
-  nome: string;
-  email: string;
-  telefone?: string;
-}
-
-/** O restaurante em que a pessoa está operando neste login. */
-export interface Empresa {
-  idEmpresa: number;
-  nome: string;
-}
-
+/**
+ * Sessão.
+ *
+ * As formas vêm do contrato da API: guardar aqui uma cópia reescrita delas
+ * recriaria a tradução manual que o contrato veio eliminar.
+ */
 interface AuthState {
   token: string | null;
-  user: User | null;
+  user: UsuarioContrato | null;
   /** Decide quais grupos de rota abrem. Vem do token, não é escolhido no app. */
   papel: Papel | null;
-  empresa: Empresa | null;
+  empresa: EmpresaResumo | null;
   _hasHydrated: boolean;
-  setAuth: (dados: { token: string; user: User; papel: Papel; empresa: Empresa }) => void;
+  setAuth: (dados: RespostaLogin) => void;
   clearAuth: () => void;
-  updateUser: (partial: Partial<User>) => void;
+  updateUser: (partial: Partial<UsuarioContrato>) => void;
   setHasHydrated: (v: boolean) => void;
 }
 
@@ -37,7 +30,7 @@ export const useAuthStore = create<AuthState>()(
       papel: null,
       empresa: null,
       _hasHydrated: false,
-      setAuth: ({ token, user, papel, empresa }) => set({ token, user, papel, empresa }),
+      setAuth: ({ token, usuario, papel, empresa }) => set({ token, user: usuario, papel, empresa }),
       clearAuth: () => set({ token: null, user: null, papel: null, empresa: null }),
       updateUser: (partial) =>
         set((state) => ({ user: state.user ? { ...state.user, ...partial } : null })),
@@ -59,3 +52,5 @@ export function rotaInicial(papel: Papel | null): string {
   if (papel === 'gestor') return '/(gestor)';
   return '/(garcom)';
 }
+
+export type { UsuarioContrato as User, EmpresaResumo as Empresa };

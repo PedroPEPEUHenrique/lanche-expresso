@@ -1,66 +1,39 @@
 import { apiFetch, ApiError } from './apiClient';
-import { User, Empresa } from '../store/authStore';
-import { Papel } from '../types';
+import { Papel, RespostaLogin, EscolhaDeEmpresa } from '../types';
 
-interface UsuarioApi {
-  id_usuario: number;
-  nome: string;
-  email: string;
-  telefone?: string | null;
-}
-
-export interface ResultadoLogin {
-  token: string;
-  user: User;
-  papel: Papel;
-  empresa: Empresa;
-}
-
-/** Opção devolvida quando a pessoa trabalha em mais de um restaurante. */
-export interface EscolhaEmpresa {
-  idEmpresa: number;
-  nome: string;
-  papel: Papel;
-}
+/**
+ * Autenticação.
+ *
+ * `RespostaLogin` vem do contrato — não há mais conversão de `id_usuario`
+ * para `id` aqui. O que o servidor manda é exatamente o que o tipo diz.
+ */
 
 export class PrecisaEscolherEmpresa extends Error {
-  constructor(public empresas: EscolhaEmpresa[]) {
+  constructor(public empresas: EscolhaDeEmpresa[]) {
     super('Escolha o restaurante');
     this.name = 'PrecisaEscolherEmpresa';
   }
 }
 
 /**
- * Autentica. Senha correta não basta: sem vínculo ativo com um restaurante a
- * API não emite token, porque toda rota depende de saber onde a pessoa está
- * operando e com qual papel.
+ * Senha correta não basta: sem vínculo ativo com um restaurante a API não
+ * emite token, porque toda rota depende de saber onde a pessoa está operando
+ * e com qual papel.
  *
  * Quem tem vínculo com mais de um restaurante recebe 409 com a lista; o app
  * pergunta e repete o login com o idEmpresa escolhido.
  */
-export async function login(email: string, senha: string, idEmpresa?: number): Promise<ResultadoLogin> {
+export async function login(email: string, senha: string, idEmpresa?: number): Promise<RespostaLogin> {
   try {
-    const data = await apiFetch<{
-      token: string;
-      usuario: UsuarioApi;
-      papel: Papel;
-      empresa: { idEmpresa: number; nome: string };
-    }>('/usuarios/login', {
+    return await apiFetch<RespostaLogin>('/usuarios/login', {
       method: 'POST',
       body: { email, senha, idEmpresa },
       autenticado: false,
       mensagemErro: 'E-mail ou senha inválidos',
     });
-
-    return {
-      token: data.token,
-      user: mapUser(data.usuario),
-      papel: data.papel,
-      empresa: data.empresa,
-    };
   } catch (erro) {
     if (erro instanceof ApiError && erro.status === 409 && erro.dados?.empresas) {
-      throw new PrecisaEscolherEmpresa(erro.dados.empresas as EscolhaEmpresa[]);
+      throw new PrecisaEscolherEmpresa(erro.dados.empresas as EscolhaDeEmpresa[]);
     }
     throw erro;
   }
@@ -74,11 +47,4 @@ export async function alterarSenha(senhaAtual: string, novaSenha: string): Promi
   });
 }
 
-export function mapUser(u: UsuarioApi): User {
-  return {
-    id: u.id_usuario,
-    nome: u.nome,
-    email: u.email,
-    telefone: u.telefone ?? undefined,
-  };
-}
+export type { Papel, EscolhaDeEmpresa };

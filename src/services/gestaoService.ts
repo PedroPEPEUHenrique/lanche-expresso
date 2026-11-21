@@ -1,13 +1,22 @@
 import { apiFetch } from './apiClient';
-import { Funcionario, Papel, Caixa, MovimentoCaixa, PainelRelatorio, Insumo, FichaTecnica } from '../types';
+import {
+  Funcionario, Papel, Caixa, MovimentoCaixa, PainelRelatorio,
+  Insumo, FichaTecnica,
+} from '../types';
+
+/**
+ * Chamadas do gestor.
+ *
+ * Sem conversão de nomes: a API responde no contrato. Este arquivo tinha 11
+ * linhas de tradução manual antes de o contrato existir.
+ */
 
 // ---------------------------------------------------------------------------
 // Equipe
 // ---------------------------------------------------------------------------
 
 export async function listarEquipe(): Promise<Funcionario[]> {
-  const data = await apiFetch<any[]>('/funcionarios', { mensagemErro: 'Erro ao carregar a equipe' });
-  return data.map(mapFuncionario);
+  return await apiFetch<Funcionario[]>('/funcionarios', { mensagemErro: 'Erro ao carregar a equipe' });
 }
 
 export async function criarFuncionario(dados: {
@@ -36,28 +45,27 @@ export async function alterarAtivo(idFuncionario: number, ativo: boolean): Promi
 
 /** Devolve null quando não há turno aberto — a tela mostra "abrir caixa". */
 export async function caixaAtual(): Promise<Caixa | null> {
-  const data = await apiFetch<any>('/caixa', { mensagemErro: 'Erro ao carregar o caixa' });
-  return data ? mapCaixa(data) : null;
+  return await apiFetch<Caixa | null>('/caixa', { mensagemErro: 'Erro ao carregar o caixa' });
 }
 
 export async function abrirCaixa(vlAbertura: number, observacao?: string): Promise<Caixa> {
-  return mapCaixa(await apiFetch<any>('/caixa', {
+  return await apiFetch<Caixa>('/caixa', {
     method: 'POST', body: { vlAbertura, observacao }, mensagemErro: 'Erro ao abrir o caixa',
-  }));
+  });
 }
 
 export async function fecharCaixa(idCaixa: number, vlInformado: number, forcar = false): Promise<Caixa> {
-  return mapCaixa(await apiFetch<any>(`/caixa/${idCaixa}/fechar`, {
+  return await apiFetch<Caixa>(`/caixa/${idCaixa}/fechar`, {
     method: 'PATCH', body: { vlInformado, forcar }, mensagemErro: 'Erro ao fechar o caixa',
-  }));
+  });
 }
 
 export async function lancarMovimento(
   tipo: MovimentoCaixa['tipo'], valor: number, descricao?: string
 ): Promise<Caixa> {
-  return mapCaixa(await apiFetch<any>('/caixa/movimentos', {
+  return await apiFetch<Caixa>('/caixa/movimentos', {
     method: 'POST', body: { tipo, valor, descricao }, mensagemErro: 'Erro ao lançar o movimento',
-  }));
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -114,39 +122,4 @@ export async function removerDaFicha(idProduto: number, idInsumo: number): Promi
   await apiFetch<void>(`/produtos/${idProduto}/ficha/${idInsumo}`, {
     method: 'DELETE', mensagemErro: 'Erro ao remover o insumo da ficha',
   });
-}
-
-// ---------------------------------------------------------------------------
-
-function mapFuncionario(f: any): Funcionario {
-  return {
-    idFuncionario: f.id_funcionario,
-    idUsuario: f.id_usuario,
-    nome: f.nome,
-    email: f.email,
-    telefone: f.telefone ?? undefined,
-    papel: f.papel,
-    ativo: !!f.ativo,
-    dtAdmissao: f.dt_admissao,
-  };
-}
-
-function mapCaixa(c: any): Caixa {
-  return {
-    idCaixa: c.id_caixa,
-    status: c.status,
-    dtAbertura: c.dt_abertura,
-    dtFechamento: c.dt_fechamento ?? null,
-    nomeAbertura: c.nome_abertura ?? undefined,
-    resumo: c.resumo,
-    movimentos: (c.movimentos ?? []).map((m: any) => ({
-      idMovimento: m.id_movimento,
-      tipo: m.tipo,
-      descricao: m.descricao ?? '',
-      valor: Number(m.valor),
-      numeroMesa: m.numero_mesa ?? undefined,
-      nomeFuncionario: m.nome_funcionario ?? undefined,
-      dtMovimento: m.dt_movimento,
-    })),
-  };
 }

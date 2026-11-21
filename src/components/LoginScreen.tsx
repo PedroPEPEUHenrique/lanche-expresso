@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { login, PrecisaEscolherEmpresa, EscolhaEmpresa } from '../services/authService';
+import { login, PrecisaEscolherEmpresa, EscolhaDeEmpresa } from '../services/authService';
 import { useAuthStore, rotaInicial } from '../store/authStore';
 import { theme } from '../style/theme';
 import { Botao, Colchetes, Divisor, Fundo, Halo, Painel, Regua, Rotulo, Selo } from './cyber';
@@ -19,7 +19,7 @@ export default function LoginScreen() {
   const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [carregando, setCarregando] = useState(false);
-  const [opcoes, setOpcoes] = useState<EscolhaEmpresa[] | null>(null);
+  const [opcoes, setOpcoes] = useState<EscolhaDeEmpresa[] | null>(null);
   const { setAuth } = useAuthStore();
 
   // Quem já tem sessão é redirecionado pelo GuardaDeRota no layout raiz, não
